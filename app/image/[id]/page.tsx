@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import { CopyButton } from "@/components/ui/CopyButton";
+import { Download, ExternalLink, Calendar, HardDrive, FileType, Maximize } from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { Metadata, ResolvingMetadata } from "next";
