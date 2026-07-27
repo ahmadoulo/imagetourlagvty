@@ -4,6 +4,7 @@ import Image from "next/image";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { Download, ExternalLink, Calendar, HardDrive, FileType, Maximize } from "lucide-react";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { Metadata, ResolvingMetadata } from "next";
 
 type Props = {
@@ -49,10 +50,17 @@ export default async function ImagePage({ params }: Props) {
     notFound();
   }
 
-  const directUrl = image.url;
-  const markdown = `![${image.originalName}](${image.url})`;
-  const html = `<img src="${image.url}" alt="${image.originalName}" />`;
-  const bbcode = `[img]${image.url}[/img]`;
+  const headersList = await headers();
+  const host = headersList.get("host") || "localhost:3000";
+  const protocol = headersList.get("x-forwarded-proto") || "http";
+  const baseUrl = `${protocol}://${host}`;
+  
+  const relativeUrl = image.url;
+  const directUrl = relativeUrl.startsWith('/') ? `${baseUrl}${relativeUrl}` : relativeUrl;
+  
+  const markdown = `![${image.originalName}](${directUrl})`;
+  const html = `<img src="${directUrl}" alt="${image.originalName}" />`;
+  const bbcode = `[img]${directUrl}[/img]`;
 
   return (
     <div className="min-h-screen bg-muted/20 pb-20">

@@ -5,6 +5,7 @@ import { UploadCloud, FileImage, X, CheckCircle, AlertCircle, Loader2 } from "lu
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { CopyButton } from "@/components/ui/CopyButton";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -199,7 +200,7 @@ export function UploadDropzone() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="flex items-center gap-4 p-4 rounded-lg border bg-card text-card-foreground shadow-sm"
+                className="flex flex-wrap items-center gap-4 p-4 rounded-lg border bg-card text-card-foreground shadow-sm"
               >
                 <div className="flex-shrink-0">
                   {upload.file.type.startsWith("image/") ? (
@@ -261,6 +262,18 @@ export function UploadDropzone() {
                     <X className="w-4 h-4" />
                   </button>
                 </div>
+                
+                {upload.status === "success" && upload.url && (
+                  <div className="col-span-full w-full mt-3 flex items-center gap-2 pt-3 border-t">
+                    <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Direct Link:</span>
+                    <input 
+                      readOnly 
+                      value={new URL(upload.url, window.location.origin).toString()} 
+                      className="flex h-8 w-full rounded-md border border-input bg-transparent px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" 
+                    />
+                    <CopyButton text={new URL(upload.url, window.location.origin).toString()} />
+                  </div>
+                )}
               </motion.div>
             ))}
           </motion.div>
