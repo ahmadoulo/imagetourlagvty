@@ -75,15 +75,27 @@ export async function POST(req: NextRequest) {
     const s3Bucket = process.env.S3_BUCKET_IMAGES || "images";
     const publicUrl = await uploadToS3(s3Bucket, filename, processedBuffer, file.type);
 
-    // 7. Generate and Upload Thumbnail
+    // 7. Generate and Upload Thumbnails
     if (file.type !== "image/svg+xml") {
       const thumbBucket = process.env.S3_BUCKET_THUMBNAILS || "thumbnails";
-      const thumbBuffer = await sharp(processedBuffer)
-        .resize({ width: 300, withoutEnlargement: true })
-        .webp({ quality: 80 })
-        .toBuffer();
       
-      await uploadToS3(thumbBucket, `${id}.webp`, thumbBuffer, "image/webp");
+      const variants = [
+        { suffix: "-large", width: 1200 },
+        { suffix: "-medium", width: 800 },
+        { suffix: "-small", width: 300 },
+      ];
+
+      await Promise.all(
+        variants.map(async (variant) => {
+          // If original is smaller than the variant width, we just don't enlarge it
+          const thumbBuffer = await sharp(processedBuffer)
+            .resize({ width: variant.width, withoutEnlargement: true })
+            .webp({ quality: 80 })
+            .toBuffer();
+            
+          return uploadToS3(thumbBucket, `${id}${variant.suffix}.webp`, thumbBuffer, "image/webp");
+        })
+      );
     }
 
     // 8. Save to Database
