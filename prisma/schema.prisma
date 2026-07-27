@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Visibility {
+  PUBLIC
+  UNLISTED
+  PRIVATE
+}
+
 model User {
   id            String    @id
   name          String
@@ -92,10 +98,13 @@ model Upload {
   height       Int?
   
   // Settings
-  isPublic     Boolean   @default(true)
+  visibility   Visibility @default(PUBLIC)
+  password     String?
   isFavorite   Boolean   @default(false)
   isPinned     Boolean   @default(false)
   expiresAt    DateTime?
+  downloads    Int       @default(0)
+  maxDownloads Int?
   
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -104,11 +113,17 @@ model Upload {
 }
 
 model Folder {
-  id        String   @id @default(uuid())
-  name      String
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  uploads   Upload[]
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  uploads     Upload[]
+  
+  // Sharing Settings
+  visibility  Visibility @default(PUBLIC)
+  password    String?
+  expiresAt   DateTime?
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

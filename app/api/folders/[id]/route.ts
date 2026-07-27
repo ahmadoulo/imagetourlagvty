@@ -21,13 +21,10 @@ export async function PATCH(
     const body = await request.json();
     
     const updateData: any = {};
-    if (body.name !== undefined) updateData.originalName = body.name;
-    if (body.isFavorite !== undefined) updateData.isFavorite = body.isFavorite;
-    if (body.isPinned !== undefined) updateData.isPinned = body.isPinned;
-    if (body.folderId !== undefined) updateData.folderId = body.folderId === "null" ? null : body.folderId;
+    if (body.name !== undefined) updateData.name = body.name;
+    if (body.description !== undefined) updateData.description = body.description;
     if (body.visibility !== undefined) updateData.visibility = body.visibility;
     if (body.expiresAt !== undefined) updateData.expiresAt = body.expiresAt;
-    if (body.maxDownloads !== undefined) updateData.maxDownloads = body.maxDownloads;
     
     if (body.password !== undefined) {
       if (body.password === null || body.password === "") {
@@ -37,17 +34,45 @@ export async function PATCH(
       }
     }
 
-    const updated = await prisma.upload.update({
+    const updated = await prisma.folder.update({
       where: { 
         id,
-        userId: session.user.id // Ensure they own it
+        userId: session.user.id
       },
       data: updateData
     });
 
     return NextResponse.json(updated);
   } catch (error) {
-    console.error("Error updating image:", error);
+    console.error("Error updating folder:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers()
+    });
+
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    await prisma.folder.delete({
+      where: { 
+        id,
+        userId: session.user.id
+      }
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting folder:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

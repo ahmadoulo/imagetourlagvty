@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { s3Client } from "@/lib/s3";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { parseImageParams, processImage } from "@/lib/image-processing";
+import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 export async function GET(
   req: NextRequest,
@@ -15,6 +18,45 @@ export async function GET(
 
     const bucket = path[0];
     const key = path.slice(1).join('/');
+
+    // 1. Access Control via Database
+    // Extract base ID from filename (e.g. 123-large.webp -> 123)
+    let uploadId = key.split('.')[0];
+    uploadId = uploadId.replace(/-large|-medium|-small/, '');
+    
+    // We only enforce if we can find the record (thumbnails might have different ids, but base is same)
+    const uploadRecord = await prisma.upload.findUnique({
+      where: { id: uploadId }
+    });
+
+    if (uploadRecord) {
+      // Check Expiration
+      if (uploadRecord.expiresAt && uploadRecord.expiresAt < new Date()) {
+        return new NextResponse("Link expired", { status: 410 });
+      }
+
+      // Check Downloads limit
+      if (uploadRecord.maxDownloads && uploadRecord.downloads >= uploadRecord.maxDownloads) {
+        return new NextResponse("Download limit reached", { status: 410 });
+      }
+
+      // Check Privacy
+      if (uploadRecord.visibility === 'PRIVATE') {
+        const session = await auth.api.getSession({ headers: await headers() });
+        if (!session || session.user.id !== uploadRecord.userId) {
+          return new NextResponse("Unauthorized", { status: 403 });
+        }
+      }
+      
+      // We don't check password here for direct image links because browsers can't prompt for it in <img> tags.
+      // Password protection is enforced at the Gallery/Collection page level.
+
+      // Increment views/downloads asynchronously
+      prisma.upload.update({
+        where: { id: uploadId },
+        data: { downloads: { increment: 1 } }
+      }).catch(console.error);
+    }
 
     const command = new GetObjectCommand({
       Bucket: bucket,

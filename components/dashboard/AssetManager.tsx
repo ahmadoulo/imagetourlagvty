@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { Sidebar } from "./Sidebar";
-import { Search, Grid, List, ArrowDownAZ, ArrowUpAZ, Trash2, FolderInput, Star, Pin, X } from "lucide-react";
+import { Search, Grid, List, ArrowDownAZ, ArrowUpAZ, Trash2, FolderInput, Star, Pin, X, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UploadDropzone } from "@/components/upload/UploadDropzone";
+import { ShareModal } from "./ShareModal";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -28,6 +29,10 @@ export function AssetManager() {
   // Pagination / Infinite Scroll
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+
+  // Sharing
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareType, setShareType] = useState<"images" | "folder">("images");
 
   const fetchImages = useCallback(async (reset = false) => {
     if (reset) {
@@ -180,7 +185,7 @@ export function AssetManager() {
             <h2 className="text-xl font-bold tracking-tight hidden md:block">
               {folderId ? "Folder" : filter === "favorites" ? "Favorites" : filter === "pinned" ? "Pinned" : "All Uploads"}
             </h2>
-            <form onSubmit={handleSearch} className="relative max-w-md w-full">
+            <form onSubmit={handleSearch} className="relative max-w-md w-full flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
@@ -190,6 +195,19 @@ export function AssetManager() {
                 className="w-full pl-9 pr-4 py-2 bg-background border border-border/60 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 shadow-sm transition-all"
               />
             </form>
+            
+            {folderId && (
+              <button 
+                onClick={() => {
+                  setShareType("folder");
+                  setIsShareModalOpen(true);
+                }}
+                className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/80 h-9 px-4 shadow-sm border border-border/50"
+              >
+                <Share2 className="w-4 h-4 mr-2" />
+                Share Collection
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -234,6 +252,16 @@ export function AssetManager() {
               </div>
               <div className="h-4 w-px bg-border/60" />
               <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => {
+                    setShareType("images");
+                    setIsShareModalOpen(true);
+                  }} 
+                  className="p-2 hover:bg-muted rounded-full transition-colors group" 
+                  title="Share"
+                >
+                  <Share2 className="w-4 h-4 text-muted-foreground group-hover:text-primary" />
+                </button>
                 <button onClick={handleBulkFavorite} className="p-2 hover:bg-muted rounded-full transition-colors group" title="Favorite">
                   <Star className="w-4 h-4 text-muted-foreground group-hover:text-yellow-500" />
                 </button>
@@ -358,6 +386,14 @@ export function AssetManager() {
           )}
         </div>
       </div>
+      
+      <ShareModal 
+        isOpen={isShareModalOpen} 
+        onClose={() => setIsShareModalOpen(false)} 
+        items={Array.from(selectedIds)} 
+        type={shareType}
+        folderId={folderId}
+      />
     </div>
   );
 }
