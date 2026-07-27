@@ -1,11 +1,10 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
-import Link from "next/link";
-import { HardDrive, Image as ImageIcon, Trash2 } from "lucide-react";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { HardDrive, Image as ImageIcon } from "lucide-react";
 import { UploadDropzone } from "@/components/upload/UploadDropzone";
+import { UserMenu } from "@/components/UserMenu";
+import { DeleteButton } from "@/components/dashboard/DeleteButton";
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({
@@ -34,7 +33,7 @@ export default async function DashboardPage() {
             ImageToURL
           </Link>
           <div className="flex items-center gap-4 text-sm">
-            <span className="text-muted-foreground">{session.user.email}</span>
+            <UserMenu email={session.user.email} />
             <ThemeToggle />
           </div>
         </div>
@@ -110,9 +109,7 @@ export default async function DashboardPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-                    <button className="p-2 text-destructive hover:bg-destructive/10 rounded-md transition-colors" title="Delete image">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <DeleteButton id={upload.id} />
                   </div>
                 </div>
               ))}

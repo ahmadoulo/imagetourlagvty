@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { CopyButton } from "@/components/ui/CopyButton";
+import { toast } from "sonner";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -112,12 +113,19 @@ export function UploadDropzone() {
       const response = await new Promise((resolve, reject) => {
         xhr.addEventListener("load", () => {
           if (xhr.status >= 200 && xhr.status < 300) {
-            resolve(JSON.parse(xhr.responseText));
+            const data = JSON.parse(xhr.responseText);
+            toast.success("Image uploaded successfully");
+            resolve(data);
           } else {
-            reject(new Error(JSON.parse(xhr.responseText).error || "Upload failed"));
+            const errorMsg = JSON.parse(xhr.responseText).error || "Upload failed";
+            toast.error(errorMsg);
+            reject(new Error(errorMsg));
           }
         });
-        xhr.addEventListener("error", () => reject(new Error("Network error")));
+        xhr.addEventListener("error", () => {
+          toast.error("Network error during upload");
+          reject(new Error("Network error"));
+        });
         xhr.open("POST", "/api/upload");
         xhr.withCredentials = true;
         xhr.send(formData);

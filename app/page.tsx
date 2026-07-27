@@ -2,8 +2,14 @@ import { UploadDropzone } from "@/components/upload/UploadDropzone";
 import { ArrowRight, Check, Zap, Lock, Code, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { UserMenu } from "@/components/UserMenu";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth.api.getSession({
+    headers: await headers()
+  });
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground selection:bg-primary/20">
       {/* Navbar */}
@@ -14,12 +20,17 @@ export default function Home() {
             ImageToURL
           </div>
           <nav className="flex items-center gap-4 text-sm font-medium">
-            <Link href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</Link>
-            <Link href="/api-docs" className="text-muted-foreground hover:text-foreground transition-colors">API</Link>
-            <Link href="/login" className="text-muted-foreground hover:text-foreground transition-colors">Login</Link>
-            <Link href="/register" className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors">
-              Sign Up
-            </Link>
+            <Link href="#features" className="text-muted-foreground hover:text-foreground transition-colors hidden sm:block">Features</Link>
+            {session ? (
+              <UserMenu email={session.user.email} />
+            ) : (
+              <>
+                <Link href="/login" className="text-muted-foreground hover:text-foreground transition-colors">Login</Link>
+                <Link href="/register" className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors">
+                  Sign Up
+                </Link>
+              </>
+            )}
             <ThemeToggle />
           </nav>
         </div>

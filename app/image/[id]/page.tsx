@@ -3,9 +3,12 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { Download, ExternalLink, Calendar, HardDrive, FileType, Maximize } from "lucide-react";
-import Link from "next/link";
 import { headers } from "next/headers";
 import { Metadata, ResolvingMetadata } from "next";
+import { auth } from "@/lib/auth";
+import { UserMenu } from "@/components/UserMenu";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { QRCodeSVG } from "qrcode.react";
 
 type Props = {
   params: Promise<{ id: string }>
@@ -42,6 +45,10 @@ export async function generateMetadata(
 export default async function ImagePage({ params }: Props) {
   const { id } = await params;
   
+  const session = await auth.api.getSession({
+    headers: await headers()
+  });
+  
   const image = await prisma.upload.findUnique({
     where: { id },
   });
@@ -70,15 +77,19 @@ export default async function ImagePage({ params }: Props) {
             <div className="w-6 h-6 rounded-md bg-primary text-primary-foreground flex items-center justify-center text-xs">I</div>
             ImageToURL
           </Link>
-          <div className="flex gap-2">
-            <a href={directUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2">
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Open Original
-            </a>
-            <a href={relativeUrl} download className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2">
-              <Download className="w-4 h-4 mr-2" />
-              Download
-            </a>
+          <div className="flex items-center gap-4">
+            <div className="flex gap-2">
+              <a href={directUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2">
+                <ExternalLink className="w-4 h-4 mr-2 hidden sm:block" />
+                Open
+              </a>
+              <a href={relativeUrl} download className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2">
+                <Download className="w-4 h-4 mr-2 hidden sm:block" />
+                Download
+              </a>
+            </div>
+            {session && <UserMenu email={session.user.email} />}
+            <ThemeToggle />
           </div>
         </div>
       </header>
@@ -135,6 +146,15 @@ export default async function ImagePage({ params }: Props) {
                 <span>{image.createdAt.toLocaleDateString()}</span>
               </div>
             </div>
+          </div>
+
+          {/* QR Code Card */}
+          <div className="bg-background border rounded-xl p-5 shadow-sm space-y-4 flex flex-col items-center">
+            <h3 className="font-semibold text-lg border-b pb-2 w-full text-left">Mobile Share</h3>
+            <div className="bg-white p-4 rounded-xl shadow-sm border inline-block">
+              <QRCodeSVG value={directUrl} size={150} level="M" />
+            </div>
+            <p className="text-sm text-muted-foreground text-center">Scan to open on mobile</p>
           </div>
 
           {/* Embeds Card */}

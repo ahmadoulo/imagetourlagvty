@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { Check, Copy } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export function CopyButton({ text, className }: { text: string; className?: string }) {
@@ -10,6 +10,7 @@ export function CopyButton({ text, className }: { text: string; className?: stri
   const handleCopy = async () => {
     await navigator.clipboard.writeText(text);
     setCopied(true);
+    toast.success("Copied to clipboard!");
     setTimeout(() => setCopied(false), 2000);
   };
 
