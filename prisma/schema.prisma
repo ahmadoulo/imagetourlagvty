@@ -93,6 +93,8 @@ model Upload {
   
   // Settings
   isPublic     Boolean   @default(true)
+  isFavorite   Boolean   @default(false)
+  isPinned     Boolean   @default(false)
   expiresAt    DateTime?
   
   createdAt    DateTime  @default(now())
