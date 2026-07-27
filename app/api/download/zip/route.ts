@@ -55,9 +55,9 @@ export async function POST(req: NextRequest) {
     const writer = stream.writable.getWriter();
     
     // Pipe archiver output to the TransformStream
-    archive.on('data', (chunk) => writer.write(chunk));
+    archive.on('data', (chunk: any) => writer.write(chunk));
     archive.on('end', () => writer.close());
-    archive.on('error', (err) => {
+    archive.on('error', (err: any) => {
       console.error("Archive error:", err);
       writer.abort(err);
     });
