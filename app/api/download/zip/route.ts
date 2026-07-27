@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import archiver from "archiver";
 import { s3Client } from "@/lib/s3";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 
@@ -47,6 +46,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Prepare Archiver
+    const archiver = require('archiver');
     const archive = archiver('zip', {
       zlib: { level: 5 } // Standard compression
     });
