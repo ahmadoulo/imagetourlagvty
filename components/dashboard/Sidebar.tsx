@@ -72,6 +72,10 @@ export function Sidebar({ currentFilter, onFilterChange, currentFolder, onFolder
         {/* Navigation */}
         <div className="space-y-1">
           <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Library</h3>
+          <Link href="/dashboard/analytics" className={cn("w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors", pathname === "/dashboard/analytics" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground")}>
+            <BarChart3 className={cn("w-4 h-4", pathname === "/dashboard/analytics" ? "text-primary" : "opacity-70")} />
+            Analytics
+          </Link>
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentFilter === item.id && currentFolder === null && pathname !== "/dashboard/analytics";
