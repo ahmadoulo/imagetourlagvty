@@ -19,6 +19,7 @@ interface UploadProgress {
   url?: string;
   uploadId?: string;
   error?: string;
+  preview?: string;
 }
 
 export function UploadDropzone() {
@@ -44,6 +45,7 @@ export function UploadDropzone() {
       file,
       progress: 0,
       status: "pending" as const,
+      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
     }));
     
     setUploads((prev) => [...prev, ...newUploads]);
@@ -117,6 +119,7 @@ export function UploadDropzone() {
         });
         xhr.addEventListener("error", () => reject(new Error("Network error")));
         xhr.open("POST", "/api/upload");
+        xhr.withCredentials = true;
         xhr.send(formData);
       });
 
@@ -203,12 +206,12 @@ export function UploadDropzone() {
                 className="flex flex-wrap items-center gap-4 p-4 rounded-lg border bg-card text-card-foreground shadow-sm"
               >
                 <div className="flex-shrink-0">
-                  {upload.file.type.startsWith("image/") ? (
-                    <div className="relative w-10 h-10 rounded overflow-hidden bg-muted flex items-center justify-center">
-                      <FileImage className="w-5 h-5 text-muted-foreground" />
+                  {upload.preview ? (
+                    <div className="relative w-12 h-12 rounded overflow-hidden bg-muted flex items-center justify-center">
+                      <img src={upload.preview} alt="preview" className="w-full h-full object-cover" />
                     </div>
                   ) : (
-                    <FileImage className="w-10 h-10 text-muted-foreground" />
+                    <FileImage className="w-12 h-12 text-muted-foreground p-2" />
                   )}
                 </div>
                 

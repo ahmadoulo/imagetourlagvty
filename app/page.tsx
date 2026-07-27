@@ -30,7 +30,7 @@ export default function Home() {
         <section className="container mx-auto max-w-5xl px-4 pt-24 pb-16 md:pt-32 md:pb-24 flex flex-col items-center text-center space-y-8">
           <div className="space-y-4 max-w-3xl">
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tighter sm:text-6xl">
-              Upload images. <br className="hidden sm:inline" />
+              <span className="bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">Upload images.</span> <br className="hidden sm:inline" />
               <span className="text-muted-foreground">Get permanent URLs instantly.</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-[42rem] mx-auto leading-normal sm:text-2xl sm:leading-8">

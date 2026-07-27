@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { HardDrive, Image as ImageIcon, Trash2 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { UploadDropzone } from "@/components/upload/UploadDropzone";
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({
@@ -34,9 +35,6 @@ export default async function DashboardPage() {
           </Link>
           <div className="flex items-center gap-4 text-sm">
             <span className="text-muted-foreground">{session.user.email}</span>
-            <Link href="/" className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors font-medium">
-              New Upload
-            </Link>
             <ThemeToggle />
           </div>
         </div>
@@ -72,6 +70,12 @@ export default async function DashboardPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Upload Section */}
+        <div className="bg-background border rounded-xl shadow-sm overflow-hidden p-6 mb-8">
+          <h2 className="font-semibold text-lg mb-4">Upload New Image</h2>
+          <UploadDropzone />
         </div>
 
         {/* Recent Uploads */}
