@@ -66,17 +66,17 @@ export async function GET(
     const searchParams = req.nextUrl.searchParams;
     const processingOptions = parseImageParams(searchParams);
 
-    const headers = new Headers();
+    const resHeaders = new Headers();
     // Cache transformed images heavily on CDN, immutable cache for originals
-    headers.set("Cache-Control", "public, max-age=31536000, immutable");
+    resHeaders.set("Cache-Control", "public, max-age=31536000, immutable");
 
     // Fast path: No transformations requested, just stream original S3 object directly
     if (!processingOptions) {
-      if (response.ContentType) headers.set("Content-Type", response.ContentType);
-      if (response.ContentLength) headers.set("Content-Length", response.ContentLength.toString());
+      if (response.ContentType) resHeaders.set("Content-Type", response.ContentType);
+      if (response.ContentLength) resHeaders.set("Content-Length", response.ContentLength.toString());
       
       const stream = response.Body.transformToWebStream();
-      return new NextResponse(stream, { status: 200, headers });
+      return new NextResponse(stream, { status: 200, headers: resHeaders });
     }
 
     // Processing Path: Load into memory, transform, then return
@@ -86,8 +86,8 @@ export async function GET(
       
       const { buffer: processedBuffer, contentType } = await processImage(buffer, processingOptions);
       
-      headers.set("Content-Type", contentType);
-      headers.set("Content-Length", processedBuffer.length.toString());
+      resHeaders.set("Content-Type", contentType);
+      resHeaders.set("Content-Length", processedBuffer.length.toString());
       
       // Parse User-Agent (simple approach, we can use UAParser later if needed)
       const userAgent = req.headers.get("user-agent") || "Unknown";
@@ -121,12 +121,12 @@ export async function GET(
         }).catch(console.error);
       }
       
-      return new NextResponse(processedBuffer as any, { status: 200, headers });
+      return new NextResponse(processedBuffer as any, { status: 200, headers: resHeaders });
     } catch (processError) {
       console.error("Error processing image on the fly:", processError);
       // Fallback to original image if processing fails
-      if (response.ContentType) headers.set("Content-Type", response.ContentType);
-      return new NextResponse(response.Body.transformToWebStream(), { status: 200, headers });
+      if (response.ContentType) resHeaders.set("Content-Type", response.ContentType);
+      return new NextResponse(response.Body.transformToWebStream(), { status: 200, headers: resHeaders });
     }
   } catch (error: any) {
     console.error("Error proxying image from S3:", error);
