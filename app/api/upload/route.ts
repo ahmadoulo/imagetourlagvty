@@ -61,7 +61,6 @@ export async function POST(req: NextRequest) {
       // Optimize image (strip EXIF, auto-orient, optimize)
       processedBuffer = await image
         .rotate() // Auto orient based on EXIF
-        .withMetadata(false) // Strip EXIF for privacy
         .toBuffer();
     }
 
