@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:16-alpine
@@ -12,6 +10,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d imagetourl"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     restart: unless-stopped
 
   minio:
@@ -26,20 +29,27 @@ services:
       - "9001:9001"
     volumes:
       - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     restart: unless-stopped
 
   # Wait for minio and create buckets
   minio-createbuckets:
     image: minio/mc:latest
     depends_on:
-      - minio
+      minio:
+        condition: service_healthy
     entrypoint: >
       /bin/sh -c "
+      sleep 2;
       /usr/bin/mc alias set myminio http://minio:9000 admin password;
       /usr/bin/mc mb myminio/images --ignore-existing;
       /usr/bin/mc mb myminio/thumbnails --ignore-existing;
-      /usr/bin/mc policy set public myminio/images;
-      /usr/bin/mc policy set public myminio/thumbnails;
+      /usr/bin/mc anonymous set download myminio/images;
+      /usr/bin/mc anonymous set download myminio/thumbnails;
       exit 0;
       "
 
@@ -52,8 +62,8 @@ services:
       - "3010:3000"
     environment:
       - DATABASE_URL=postgresql://postgres:password@db:5432/imagetourl?schema=public
-      - BETTER_AUTH_SECRET=supersecret1234567890
-      - BETTER_AUTH_URL=http://localhost:3000
+      - BETTER_AUTH_SECRET=k8sJ4mN7pQ2wX9vB5tR6yU3eA0fH1gD
+      - BETTER_AUTH_URL=http://localhost:3010
       - S3_ENDPOINT=http://minio:9000
       - S3_ACCESS_KEY_ID=admin
       - S3_SECRET_ACCESS_KEY=password
@@ -62,8 +72,10 @@ services:
       - S3_BUCKET_THUMBNAILS=thumbnails
       - S3_PUBLIC_URL=http://localhost:9000/images
     depends_on:
-      - db
-      - minio
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
