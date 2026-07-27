@@ -95,7 +95,7 @@ export async function GET(
       headers.set("Content-Type", contentType);
       headers.set("Content-Length", processedBuffer.length.toString());
       
-      return new NextResponse(processedBuffer, { status: 200, headers });
+      return new NextResponse(processedBuffer as any, { status: 200, headers });
     } catch (processError) {
       console.error("Error processing image on the fly:", processError);
       // Fallback to original image if processing fails
