@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Folder, Star, Clock, Pin, Plus, MoreVertical, Trash, Edit2 } from "lucide-react";
+import { Folder, Star, Clock, Pin, Plus, MoreVertical, Trash, Edit2, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { usePathname } from "next/navigation";
 
 interface SidebarProps {
   currentFilter: string;
@@ -17,6 +18,7 @@ export function Sidebar({ currentFilter, onFilterChange, currentFolder, onFolder
   const [folders, setFolders] = useState<any[]>([]);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
+  const pathname = usePathname();
 
   const fetchFolders = async () => {
     try {
@@ -72,7 +74,7 @@ export function Sidebar({ currentFilter, onFilterChange, currentFolder, onFolder
           <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Library</h3>
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = currentFilter === item.id && currentFolder === null;
+            const isActive = currentFilter === item.id && currentFolder === null && pathname !== "/dashboard/analytics";
             return (
               <button
                 key={item.id}

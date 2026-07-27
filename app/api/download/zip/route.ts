@@ -77,10 +77,22 @@ export async function POST(req: NextRequest) {
             const nodeStream = (response.Body as any).transformToString ? await (response.Body as any).transformToByteArray() : response.Body;
             archive.append(nodeStream as any, { name: upload.originalName });
             
-            // Increment downloads
+            // Increment downloads and log event
             await prisma.upload.update({
               where: { id: upload.id },
               data: { downloads: { increment: 1 } }
+            });
+
+            await prisma.analyticsEvent.create({
+              data: {
+                uploadId: upload.id,
+                userId: upload.userId,
+                eventType: "DOWNLOAD",
+                bandwidth: upload.size, // Approximation for original size
+                country: req.headers.get("x-vercel-ip-country") || req.headers.get("cf-ipcountry") || "Unknown",
+                browser: "ZIP Download",
+                referrer: req.headers.get("referer") || "Direct"
+              }
             });
           }
         } catch (e) {

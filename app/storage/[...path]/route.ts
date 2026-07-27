@@ -50,12 +50,6 @@ export async function GET(
       
       // We don't check password here for direct image links because browsers can't prompt for it in <img> tags.
       // Password protection is enforced at the Gallery/Collection page level.
-
-      // Increment views/downloads asynchronously
-      prisma.upload.update({
-        where: { id: uploadId },
-        data: { downloads: { increment: 1 } }
-      }).catch(console.error);
     }
 
     const command = new GetObjectCommand({
@@ -94,6 +88,38 @@ export async function GET(
       
       headers.set("Content-Type", contentType);
       headers.set("Content-Length", processedBuffer.length.toString());
+      
+      // Parse User-Agent (simple approach, we can use UAParser later if needed)
+      const userAgent = req.headers.get("user-agent") || "Unknown";
+      let browser = "Unknown";
+      if (userAgent.includes("Chrome")) browser = "Chrome";
+      else if (userAgent.includes("Firefox")) browser = "Firefox";
+      else if (userAgent.includes("Safari") && !userAgent.includes("Chrome")) browser = "Safari";
+      else if (userAgent.includes("Edge")) browser = "Edge";
+      
+      const country = req.headers.get("x-vercel-ip-country") || req.headers.get("cf-ipcountry") || "Unknown";
+      const referrer = req.headers.get("referer") || "Direct";
+
+      if (uploadRecord) {
+        // Track View Event asynchronously
+        prisma.analyticsEvent.create({
+          data: {
+            uploadId: uploadId,
+            userId: uploadRecord.userId,
+            eventType: "VIEW",
+            bandwidth: processedBuffer.length,
+            country: country,
+            browser: browser,
+            referrer: referrer
+          }
+        }).catch(console.error);
+
+        // Increment total views on the upload itself
+        prisma.upload.update({
+          where: { id: uploadId },
+          data: { downloads: { increment: 1 } } // Technically views/downloads overlap here
+        }).catch(console.error);
+      }
       
       return new NextResponse(processedBuffer as any, { status: 200, headers });
     } catch (processError) {

@@ -13,6 +13,11 @@ enum Visibility {
   PRIVATE
 }
 
+enum EventType {
+  VIEW
+  DOWNLOAD
+}
+
 model User {
   id            String    @id
   name          String
@@ -29,6 +34,7 @@ model User {
   uploads       Upload[]
   folders       Folder[]
   apiKeys       ApiKey[]
+  analytics     AnalyticsEvent[]
   
   @@unique([email])
   @@map("user")
@@ -110,6 +116,7 @@ model Upload {
   updatedAt    DateTime  @updatedAt
   
   shareLinks   ShareLink[]
+  analytics    AnalyticsEvent[]
 }
 
 model Folder {
@@ -153,4 +160,24 @@ model ShareLink {
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(uuid())
+  uploadId  String
+  upload    Upload   @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+  userId    String?  
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade) // The owner of the image
+  
+  eventType EventType
+  bandwidth Int      @default(0)
+  country   String?  
+  browser   String?
+  referrer  String?
+  
+  createdAt DateTime @default(now())
+
+  @@index([uploadId])
+  @@index([userId])
+  @@index([createdAt])
 }
