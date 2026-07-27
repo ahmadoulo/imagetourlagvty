@@ -16,6 +16,7 @@ interface UploadProgress {
   progress: number;
   status: "pending" | "uploading" | "success" | "error";
   url?: string;
+  uploadId?: string;
   error?: string;
 }
 
@@ -123,7 +124,7 @@ export function UploadDropzone() {
       setUploads((prev) =>
         prev.map((u) =>
           u.id === upload.id
-            ? { ...u, status: "success", progress: 100, url: data.upload.url }
+            ? { ...u, status: "success", progress: 100, url: data.upload.url, uploadId: data.upload.id }
             : u
         )
       );
@@ -243,9 +244,9 @@ export function UploadDropzone() {
                   {upload.status === "error" && (
                     <AlertCircle className="w-4 h-4 text-destructive" />
                   )}
-                  {upload.status === "success" && (
+                  {upload.status === "success" && upload.uploadId && (
                     <a
-                      href={`/image/${upload.id}`}
+                      href={`/image/${upload.uploadId}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-1.5 rounded-md hover:bg-primary/10 text-primary transition-colors text-xs font-medium"
