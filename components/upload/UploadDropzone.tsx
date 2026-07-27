@@ -260,9 +260,9 @@ export function UploadDropzone() {
                 )}
               </motion.div>
             ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 }
