@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   try {
     const { imageIds, collectionId, password } = await req.json();
 
-    let uploadsToZip = [];
+    let uploadsToZip: any[] = [];
 
     // Option A: Download by Collection ID
     if (collectionId) {
