@@ -24,6 +24,13 @@ RUN npx prisma generate
 
 RUN npm run build
 
+# Migration runner - uses full node_modules to run prisma db push
+FROM base AS migrator
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY prisma ./prisma/
+CMD ["npx", "prisma", "db", "push", "--skip-generate", "--accept-data-loss"]
+
 # Production image, copy all the files and run next
 FROM base AS runner
 WORKDIR /app
@@ -39,15 +46,9 @@ COPY --from=builder /app/public ./public
 # Automatically leverage output traces to reduce image size
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-# Copy prisma schema + generated client + CLI for db push at startup
+# Copy prisma generated client
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-
-# Copy entrypoint script
-COPY --chown=nextjs:nodejs entrypoint.sh ./entrypoint.sh
-RUN chmod +x ./entrypoint.sh
 
 USER nextjs
 
@@ -55,5 +56,4 @@ EXPOSE 3000
 
 ENV PORT=3000
 
-# Use entrypoint to run migrations before starting the server
-CMD ["./entrypoint.sh"]
+CMD ["node", "server.js"]

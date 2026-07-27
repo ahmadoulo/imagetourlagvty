@@ -36,7 +36,6 @@ services:
       retries: 10
     restart: unless-stopped
 
-  # Wait for minio and create buckets
   minio-createbuckets:
     image: minio/mc:latest
     depends_on:
@@ -52,6 +51,19 @@ services:
       /usr/bin/mc anonymous set download myminio/thumbnails;
       exit 0;
       "
+
+  # Run database migrations before app starts
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migrator
+    container_name: imagetourl_migrate
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/imagetourl?schema=public
+    depends_on:
+      db:
+        condition: service_healthy
 
   app:
     build:
@@ -76,6 +88,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
 
 volumes:
