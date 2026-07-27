@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useCallback, useEffect } from "react";
-import { UploadCloud, FileImage, X, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { UploadCloud, FileImage, X, CheckCircle, AlertCircle, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -24,20 +24,18 @@ interface UploadProgress {
 }
 
 export function UploadDropzone() {
-  const [isDragging, setIsDragging] = useState(false);
+  const [isDragActive, setIsDragActive] = useState(false);
   const [uploads, setUploads] = useState<UploadProgress[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrag = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setIsDragActive(true);
+    } else if (e.type === "dragleave") {
+      setIsDragActive(false);
+    }
   }, []);
 
   const processFiles = useCallback((files: File[]) => {
@@ -51,7 +49,6 @@ export function UploadDropzone() {
     
     setUploads((prev) => [...prev, ...newUploads]);
     
-    // Start uploading each file
     newUploads.forEach((upload) => {
       startUpload(upload);
     });
@@ -60,7 +57,7 @@ export function UploadDropzone() {
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(false);
+    setIsDragActive(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       processFiles(Array.from(e.dataTransfer.files));
@@ -71,13 +68,11 @@ export function UploadDropzone() {
     if (e.target.files && e.target.files.length > 0) {
       processFiles(Array.from(e.target.files));
     }
-    // Reset input
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   }, [processFiles]);
 
-  // Handle global paste event
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
       if (e.clipboardData && e.clipboardData.files.length > 0) {
@@ -98,7 +93,6 @@ export function UploadDropzone() {
     formData.append("file", upload.file);
 
     try {
-      // We use XMLHttpRequest here to get real progress updates
       const xhr = new XMLHttpRequest();
       
       xhr.upload.addEventListener("progress", (event) => {
@@ -149,24 +143,20 @@ export function UploadDropzone() {
     }
   };
 
-  const removeUpload = (id: string) => {
-    setUploads((prev) => prev.filter((u) => u.id !== id));
-  };
-
   return (
     <div className="w-full max-w-3xl mx-auto p-4 space-y-6">
       <div
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
+        className={cn(
+          "border-2 border-dashed rounded-2xl p-8 md:p-12 text-center transition-all duration-200 cursor-pointer flex flex-col items-center justify-center relative overflow-hidden group",
+          isDragActive 
+            ? "border-primary bg-primary/5" 
+            : "border-border/60 bg-muted/20 hover:bg-muted/50 hover:border-border"
+        )}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
-        className={cn(
-          "relative flex flex-col items-center justify-center w-full h-64 p-6 border-2 border-dashed rounded-xl cursor-pointer transition-colors duration-200 ease-in-out",
-          isDragging
-            ? "border-primary bg-primary/5"
-            : "border-muted-foreground/25 hover:border-primary/50 hover:bg-accent/50",
-          "bg-background text-foreground shadow-sm"
-        )}
       >
         <input
           ref={fileInputRef}
@@ -176,72 +166,55 @@ export function UploadDropzone() {
           onChange={handleFileInput}
           accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,image/avif,image/heic"
         />
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
         
-        <div className="flex flex-col items-center justify-center space-y-4 text-center">
-          <div className="p-4 rounded-full bg-primary/10 text-primary">
-            <UploadCloud className="w-8 h-8" />
-          </div>
-          <div className="space-y-1">
-            <h3 className="font-medium text-lg tracking-tight">
-              Click to upload or drag and drop
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              PNG, JPG, WEBP, GIF, SVG up to 50MB
-            </p>
-            <p className="text-xs text-muted-foreground mt-2">
-              You can also paste images from your clipboard
-            </p>
-          </div>
+        <div className={cn(
+          "w-16 h-16 rounded-full bg-background border flex items-center justify-center mb-6 shadow-sm transition-transform duration-300",
+          isDragActive ? "scale-110 shadow-primary/20 border-primary/30" : "group-hover:scale-105"
+        )}>
+          <UploadCloud className={cn("w-8 h-8 transition-colors", isDragActive ? "text-primary" : "text-muted-foreground")} />
         </div>
+        
+        <h3 className="text-xl font-semibold mb-2 tracking-tight">
+          {isDragActive ? "Drop images here" : "Click or drag images to upload"}
+        </h3>
+        <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+          Support for PNG, JPG, WEBP, and GIF up to 50MB.
+        </p>
+        <p className="text-xs text-muted-foreground mt-2">
+          You can also paste images from your clipboard
+        </p>
       </div>
 
-      {/* Upload Queue */}
-      <AnimatePresence>
-        {uploads.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, height: 0 }}
-            className="space-y-3"
-          >
+      {uploads.length > 0 && (
+        <div className="mt-8 space-y-3">
+          <AnimatePresence>
             {uploads.map((upload) => (
               <motion.div
                 key={upload.id}
-                layout
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="flex flex-wrap items-center gap-4 p-4 rounded-lg border bg-card text-card-foreground shadow-sm"
+                transition={{ duration: 0.2 }}
+                className="flex flex-wrap items-center gap-4 p-4 rounded-xl border border-border/60 bg-background/50 backdrop-blur-sm shadow-sm"
               >
                 <div className="flex-shrink-0">
                   {upload.preview ? (
-                    <div className="relative w-12 h-12 rounded overflow-hidden bg-muted flex items-center justify-center">
+                    <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-muted flex items-center justify-center shadow-sm border border-border/50">
                       <img src={upload.preview} alt="preview" className="w-full h-full object-cover" />
                     </div>
                   ) : (
-                    <FileImage className="w-12 h-12 text-muted-foreground p-2" />
+                    <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center shadow-sm border border-border/50">
+                      <FileImage className="w-6 h-6 text-muted-foreground" />
+                    </div>
                   )}
                 </div>
                 
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{upload.file.name}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    {upload.status === "uploading" && (
-                      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                        <motion.div
-                          className="h-full bg-primary"
-                          initial={{ width: 0 }}
-                          animate={{ width: `${upload.progress}%` }}
-                        />
-                      </div>
-                    )}
-                    <span className="text-xs text-muted-foreground">
-                      {upload.status === "pending" && "Waiting..."}
-                      {upload.status === "uploading" && `${upload.progress}%`}
-                      {upload.status === "success" && "Completed"}
-                      {upload.status === "error" && (
-                        <span className="text-destructive">{upload.error}</span>
-                      )}
+                <div className="flex-1 min-w-[200px]">
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span className="text-sm font-medium truncate max-w-[200px] md:max-w-xs">{upload.file.name}</span>
+                    <span className="text-xs text-muted-foreground font-mono">
+                      {upload.status === "error" ? "Error" : `${upload.progress}%`}
                     </span>
                   </div>
                 </div>

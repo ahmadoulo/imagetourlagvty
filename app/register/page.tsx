@@ -5,6 +5,7 @@ import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
+import { SlideUp } from "@/components/motion";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -41,69 +42,74 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/20 px-4">
-      <div className="w-full max-w-sm space-y-6 bg-background p-8 border rounded-xl shadow-sm">
-        <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-bold tracking-tight">Create an account</h1>
-          <p className="text-sm text-muted-foreground">Start hosting your images today</p>
+    <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA] dark:bg-background px-4 py-12">
+      <SlideUp className="w-full max-w-[400px]" y={20} duration={0.6}>
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg mb-4 shadow-sm shadow-primary/20">
+            I
+          </div>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Create an account</h1>
+          <p className="text-sm text-muted-foreground mt-1">Start hosting your images today</p>
         </div>
 
-        {error && (
-          <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
-            {error}
-          </div>
-        )}
+        <div className="bg-background border border-border/60 rounded-2xl p-6 shadow-sm shadow-black/5 dark:shadow-none">
+          {error && (
+            <div className="mb-4 p-3 text-sm text-destructive bg-destructive/10 rounded-lg border border-destructive/20">
+              {error}
+            </div>
+          )}
 
-        <form onSubmit={handleRegister} className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium leading-none">Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              placeholder="John Doe"
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium leading-none">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              placeholder="name@example.com"
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium leading-none">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              required
-            />
-          </div>
-          
-          <button
-            type="submit"
-            disabled={loading}
-            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-10 px-4 py-2 w-full"
-          >
-            {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Sign Up"}
-          </button>
-        </form>
+          <form onSubmit={handleRegister} className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Name</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full h-10 px-3 rounded-lg border border-border bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
+                placeholder="John Doe"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Email address</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full h-10 px-3 rounded-lg border border-border bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
+                placeholder="name@example.com"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full h-10 px-3 rounded-lg border border-border bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
+                required
+              />
+            </div>
+            
+            <button
+              type="submit"
+              disabled={loading}
+              className="mt-6 w-full h-10 bg-primary text-primary-foreground font-medium rounded-lg text-sm shadow-sm hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center"
+            >
+              {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Sign Up"}
+            </button>
+          </form>
+        </div>
 
-        <div className="text-center text-sm text-muted-foreground">
+        <p className="mt-8 text-center text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Link href="/login" className="underline underline-offset-4 hover:text-primary">
+          <Link href="/login" className="font-medium text-foreground hover:underline underline-offset-4">
             Sign in
           </Link>
-        </div>
-      </div>
+        </p>
+      </SlideUp>
     </div>
   );
 }
