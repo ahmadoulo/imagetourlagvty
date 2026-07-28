@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Search } from "lucide-react";
 import { UserActions } from "./user-actions";
+import { UsersFilter } from "./UsersFilter";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
@@ -55,36 +56,7 @@ export default async function AdminUsersPage({
         </div>
         
         {/* Simple search form */}
-        <form className="flex items-center gap-2 w-full md:w-auto">
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              name="query"
-              defaultValue={query}
-              placeholder="Search users..."
-              className="w-full pl-9 pr-4 py-2 bg-background border border-border/60 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 shadow-sm"
-            />
-          </div>
-          <select 
-            name="status" 
-            defaultValue={status || ""}
-            onChange={(e) => e.target.form?.submit()}
-            className="px-3 py-2 bg-background border border-border/60 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 shadow-sm"
-          >
-            <option value="">All Statuses</option>
-            <option value="ACTIVE">Active</option>
-            <option value="SUSPENDED">Suspended</option>
-            <option value="BANNED">Banned</option>
-          </select>
-          <a
-            href="/api/admin/export/users"
-            download
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors whitespace-nowrap"
-          >
-            Export CSV
-          </a>
-        </form>
+        <UsersFilter defaultQuery={query} defaultStatus={status} />
       </div>
 
       <div className="bg-background border rounded-xl shadow-sm overflow-x-auto">

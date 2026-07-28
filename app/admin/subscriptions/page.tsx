@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { CreditCard, Search, Calendar, User as UserIcon, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import Link from "next/link";
+import { SubscriptionsFilter } from "./SubscriptionsFilter";
 
 export default async function AdminSubscriptionsPage({
   searchParams,
@@ -49,29 +50,7 @@ export default async function AdminSubscriptionsPage({
           <p className="text-muted-foreground mt-1">Manage user plans and billing.</p>
         </div>
         
-        <form className="flex items-center gap-2 w-full md:w-auto">
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              name="query"
-              defaultValue={query}
-              placeholder="Search by user..."
-              className="w-full pl-9 pr-4 py-2 bg-background border border-border/60 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 shadow-sm"
-            />
-          </div>
-          <select 
-            name="status" 
-            defaultValue={status || ""}
-            onChange={(e) => e.target.form?.submit()}
-            className="px-3 py-2 bg-background border border-border/60 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 shadow-sm"
-          >
-            <option value="">All Statuses</option>
-            <option value="ACTIVE">Active</option>
-            <option value="CANCELED">Canceled</option>
-            <option value="PAST_DUE">Past Due</option>
-          </select>
-        </form>
+        <SubscriptionsFilter defaultQuery={query} defaultStatus={status} />
       </div>
 
       <div className="bg-background border rounded-xl shadow-sm overflow-x-auto">
