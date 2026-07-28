@@ -57,7 +57,11 @@ export default async function CollectionPage({ params }: Props) {
     if (authCookie) {
       const passwordAttempt = authCookie.split('=')[1];
       if (passwordAttempt && typeof passwordAttempt === "string") {
-        isAuthorized = await bcrypt.compare(passwordAttempt, collection.password);
+        try {
+          isAuthorized = await bcrypt.compare(passwordAttempt, collection.password);
+        } catch (e) {
+          isAuthorized = false;
+        }
       }
     }
 
@@ -117,7 +121,7 @@ export default async function CollectionPage({ params }: Props) {
           <h1 className="text-4xl font-bold tracking-tight mb-4">{collection.name}</h1>
           {collection.description && <p className="text-muted-foreground text-lg mb-6">{collection.description}</p>}
           <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
-            <span>By {collection.user.name}</span>
+            <span>By {collection.user?.name || "Unknown"}</span>
             <span>•</span>
             <span>{collection.uploads.length} items</span>
           </div>
@@ -126,8 +130,8 @@ export default async function CollectionPage({ params }: Props) {
         {collection.uploads.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
              <Grid className="w-12 h-12 text-muted-foreground opacity-50 mb-4" />
-             <h3 className="text-xl font-semibold mb-2">Empty Collection</h3>
-             <p className="text-muted-foreground">This collection doesn't have any images yet.</p>
+             <h3 className="text-xl font-semibold mb-2">Ce dossier est vide</h3>
+             <p className="text-muted-foreground">Ce dossier ne contient aucune image pour le moment.</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 auto-rows-[250px]">

@@ -77,7 +77,7 @@ export default function AnalyticsDashboard() {
     if (!element) return;
     try {
       toast.loading("Generating PDF...", { id: "pdf" });
-      const canvas = await html2canvas(element, { scale: 2 });
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false });
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("p", "mm", "a4");
       const imgProps = pdf.getImageProperties(imgData);
@@ -87,6 +87,7 @@ export default function AnalyticsDashboard() {
       pdf.save(`analytics_${range}days.pdf`);
       toast.success("PDF Exported!", { id: "pdf" });
     } catch (e) {
+      console.error(e);
       toast.error("Failed to generate PDF", { id: "pdf" });
     }
   };
@@ -201,6 +202,7 @@ export default function AnalyticsDashboard() {
                   <Tooltip 
                     contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))", borderRadius: "8px" }}
                     labelStyle={{ color: "hsl(var(--foreground))", fontWeight: "bold", marginBottom: "4px" }}
+                    itemStyle={{ color: "hsl(var(--foreground))" }}
                   />
                   <Line type="monotone" dataKey="views" stroke="#0088FE" strokeWidth={3} dot={false} activeDot={{ r: 6 }} name="Views" />
                   <Line type="monotone" dataKey="downloads" stroke="#00C49F" strokeWidth={3} dot={false} activeDot={{ r: 6 }} name="Downloads" />
@@ -222,7 +224,10 @@ export default function AnalyticsDashboard() {
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip contentStyle={{ backgroundColor: "hsl(var(--background))", borderRadius: "8px" }} />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))", borderRadius: "8px" }} 
+                        itemStyle={{ color: "hsl(var(--foreground))" }} 
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -239,7 +244,12 @@ export default function AnalyticsDashboard() {
                       <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="hsl(var(--border))" />
                       <XAxis type="number" hide />
                       <YAxis dataKey="name" type="category" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                      <Tooltip cursor={{ fill: 'hsl(var(--muted)/0.5)' }} contentStyle={{ backgroundColor: "hsl(var(--background))", borderRadius: "8px" }} />
+                      <Tooltip 
+                        cursor={{ fill: 'hsl(var(--muted)/0.5)' }} 
+                        contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))", borderRadius: "8px" }} 
+                        itemStyle={{ color: "hsl(var(--foreground))" }} 
+                        labelStyle={{ color: "hsl(var(--foreground))" }} 
+                      />
                       <Bar dataKey="value" fill="#8884d8" radius={[0, 4, 4, 0]}>
                         {data.topBrowsers.map((entry: any, index: number) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

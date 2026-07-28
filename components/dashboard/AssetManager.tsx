@@ -6,6 +6,7 @@ import { Search, Grid, List, ArrowDownAZ, ArrowUpAZ, Trash2, FolderInput, Star, 
 import { cn } from "@/lib/utils";
 import { UploadDropzone } from "@/components/upload/UploadDropzone";
 import { ShareModal } from "./ShareModal";
+import { MoveToFolderModal } from "./MoveToFolderModal";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -30,9 +31,10 @@ export function AssetManager() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  // Sharing
+  // Sharing & Moving
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareType, setShareType] = useState<"images" | "folder">("images");
+  const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
 
   const fetchImages = useCallback(async (reset = false) => {
     if (reset) {
@@ -253,6 +255,13 @@ export function AssetManager() {
               <div className="h-4 w-px bg-border/60" />
               <div className="flex items-center gap-2">
                 <button 
+                  onClick={() => setIsMoveModalOpen(true)}
+                  className="p-2 hover:bg-muted rounded-full transition-colors group" 
+                  title="Move to Folder"
+                >
+                  <FolderInput className="w-4 h-4 text-muted-foreground group-hover:text-primary" />
+                </button>
+                <button 
                   onClick={() => {
                     setShareType("images");
                     setIsShareModalOpen(true);
@@ -393,6 +402,16 @@ export function AssetManager() {
         items={Array.from(selectedIds)} 
         type={shareType}
         folderId={folderId}
+      />
+
+      <MoveToFolderModal 
+        isOpen={isMoveModalOpen}
+        onClose={() => setIsMoveModalOpen(false)}
+        items={Array.from(selectedIds)}
+        onSuccess={() => {
+          setSelectedIds(new Set());
+          fetchImages(true);
+        }}
       />
     </div>
   );
