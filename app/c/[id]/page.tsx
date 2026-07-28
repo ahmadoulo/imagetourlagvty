@@ -79,10 +79,7 @@ export default async function CollectionPage({ params }: Props) {
             ImageToURL
           </Link>
           <div className="flex items-center gap-4">
-             {/* We will just use the zip download endpoint client side ideally, but here we can just put a mock button for now or a form */}
-             <form action="/api/download/zip" method="POST" target="_blank" className="hidden" id="zip-form">
-               <input type="hidden" name="collectionId" value={collection.id} />
-             </form>
+
              <button 
                 onClick={() => {
                    fetch('/api/download/zip', {

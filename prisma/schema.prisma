@@ -88,7 +88,7 @@ model Verification {
 model Upload {
   id           String    @id @default(uuid())
   userId       String?
-  user         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user         User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   folderId     String?
   folder       Folder?   @relation(fields: [folderId], references: [id], onDelete: SetNull)
   

@@ -1,0 +1,69 @@
+import { prisma } from "@/lib/prisma";
+import { LineChart, BarChart2, Eye, Download } from "lucide-react";
+import { formatBytes } from "@/lib/utils";
+
+export default async function AdminAnalyticsPage() {
+  const [totalViews, totalDownloads, topUsers] = await Promise.all([
+    prisma.analyticsEvent.count({ where: { eventType: "VIEW" } }),
+    prisma.analyticsEvent.count({ where: { eventType: "DOWNLOAD" } }),
+    prisma.user.findMany({
+      take: 10,
+      orderBy: { uploads: { _count: 'desc' } },
+      include: { _count: { select: { uploads: true } } }
+    })
+  ]);
+
+  return (
+    <div className="p-8 space-y-6 max-w-7xl mx-auto">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Platform Analytics</h1>
+        <p className="text-muted-foreground mt-1">Platform-wide usage and growth metrics.</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-background rounded-xl border border-border/60 p-6 shadow-sm flex items-center gap-4">
+          <div className="p-4 bg-blue-500/10 text-blue-500 rounded-xl">
+            <Eye className="w-8 h-8" />
+          </div>
+          <div>
+            <h3 className="text-muted-foreground font-medium">Total Image Views</h3>
+            <p className="text-4xl font-bold">{totalViews.toLocaleString()}</p>
+          </div>
+        </div>
+
+        <div className="bg-background rounded-xl border border-border/60 p-6 shadow-sm flex items-center gap-4">
+          <div className="p-4 bg-green-500/10 text-green-500 rounded-xl">
+            <Download className="w-8 h-8" />
+          </div>
+          <div>
+            <h3 className="text-muted-foreground font-medium">Total File Downloads</h3>
+            <p className="text-4xl font-bold">{totalDownloads.toLocaleString()}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-background border rounded-xl shadow-sm overflow-hidden mt-8">
+        <div className="p-6 border-b">
+          <h2 className="font-semibold text-lg flex items-center gap-2"><BarChart2 className="w-5 h-5 text-muted-foreground" /> Top Users by Uploads</h2>
+        </div>
+        <div className="divide-y">
+          {topUsers.map((user) => (
+            <div key={user.id} className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
+              <div>
+                <p className="font-medium">{user.name}</p>
+                <p className="text-sm text-muted-foreground">{user.email}</p>
+              </div>
+              <div className="text-right">
+                <p className="font-bold">{user._count.uploads}</p>
+                <p className="text-xs text-muted-foreground">uploads</p>
+              </div>
+            </div>
+          ))}
+          {topUsers.length === 0 && (
+            <div className="p-8 text-center text-muted-foreground">No users found.</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

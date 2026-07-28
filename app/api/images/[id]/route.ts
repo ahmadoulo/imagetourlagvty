@@ -51,3 +51,58 @@ export async function PATCH(
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers()
+    });
+
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+
+    const image = await prisma.upload.findFirst({
+      where: {
+        id,
+        userId: session.user.id
+      }
+    });
+
+    if (!image) {
+      return NextResponse.json({ error: "Image not found or unauthorized" }, { status: 404 });
+    }
+
+    const { deleteFromS3 } = await import("@/lib/s3");
+    let bucket = process.env.S3_BUCKET_IMAGES || "images";
+    let thumbBucket = process.env.S3_BUCKET_THUMBNAILS || "thumbnails";
+    let key = image.filename || image.url.split('/').pop() || "";
+    
+    if (key) {
+      try {
+        await deleteFromS3(bucket, key);
+        if (image.mimeType !== "image/svg+xml") {
+          await deleteFromS3(thumbBucket, `${image.id}-large.webp`).catch(e => console.error("Thumb delete error:", e));
+          await deleteFromS3(thumbBucket, `${image.id}-medium.webp`).catch(e => console.error("Thumb delete error:", e));
+          await deleteFromS3(thumbBucket, `${image.id}-small.webp`).catch(e => console.error("Thumb delete error:", e));
+        }
+      } catch (s3Error) {
+        console.error("Failed to delete from S3, continuing with DB deletion:", s3Error);
+      }
+    }
+
+    await prisma.upload.delete({
+      where: { id }
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Delete error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}

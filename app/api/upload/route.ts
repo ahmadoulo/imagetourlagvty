@@ -5,6 +5,7 @@ import sharp from "sharp";
 import crypto from "crypto";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { logger } from "@/lib/logger";
 
 const MAX_UPLOAD_SIZE = 50 * 1024 * 1024; // 50MB
 const ALLOWED_MIME_TYPES = [
@@ -115,13 +116,14 @@ export async function POST(req: NextRequest) {
     });
 
     // 9. Return success
+    logger.info("File uploaded successfully", { userId, uploadId: id, size: processedBuffer.length, mimeType: file.type });
     return NextResponse.json({
       success: true,
       upload: uploadRecord
     });
 
   } catch (error) {
-    console.error("Upload error:", error);
+    logger.error("Upload error", error, { userId });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -14,7 +14,7 @@ export function DeleteButton({ id }: { id: string }) {
     
     setIsDeleting(true);
     try {
-      const res = await fetch(`/api/image/${id}`, {
+      const res = await fetch(`/api/images/${id}`, {
         method: "DELETE",
       });
       
