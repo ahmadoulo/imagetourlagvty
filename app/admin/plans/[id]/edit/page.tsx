@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { Save, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { updatePlan } from "../../actions";
+import { updatePlan } from "../../../actions";
 
 export default async function EditPlanPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
