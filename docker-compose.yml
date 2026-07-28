@@ -4,12 +4,12 @@ services:
     container_name: imagetourl_db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pG9$2Lm_vR!4xY_2026}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pG9a2LmvR4xY2026}
       POSTGRES_DB: imagetourl
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data_v3:/var/lib/postgresql/data
+      - postgres_data_v4:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d imagetourl"]
       interval: 5s
@@ -22,13 +22,13 @@ services:
     container_name: imagetourl_minio
     environment:
       MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-mN8#kLz_pQ!2wX_2026}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-mN8kLzpQ2wX2026}
     command: server /data --console-address ":9001"
     ports:
       - "9000:9000"
       - "9001:9001"
     volumes:
-      - minio_data_v2:/data
+      - minio_data_v3:/data
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       interval: 5s
@@ -44,7 +44,7 @@ services:
     entrypoint: >
       /bin/sh -c "
       sleep 2;
-      /usr/bin/mc alias set myminio http://minio:9000 admin $${MINIO_ROOT_PASSWORD:-mN8#kLz_pQ!2wX_2026};
+      /usr/bin/mc alias set myminio http://minio:9000 admin $${MINIO_ROOT_PASSWORD:-mN8kLzpQ2wX2026};
       /usr/bin/mc mb myminio/images --ignore-existing;
       /usr/bin/mc mb myminio/thumbnails --ignore-existing;
       /usr/bin/mc anonymous set download myminio/images;
@@ -60,7 +60,7 @@ services:
       target: migrator
     container_name: imagetourl_migrate
     environment:
-      - DATABASE_URL=postgresql://postgres:$${POSTGRES_PASSWORD:-pG9$$2Lm_vR!4xY_2026}@db:5432/imagetourl?schema=public
+      - DATABASE_URL=postgresql://postgres:$${POSTGRES_PASSWORD:-pG9a2LmvR4xY2026}@db:5432/imagetourl?schema=public
     depends_on:
       db:
         condition: service_healthy
@@ -73,12 +73,12 @@ services:
     ports:
       - "3010:3000"
     environment:
-      - DATABASE_URL=postgresql://postgres:$${POSTGRES_PASSWORD:-pG9$$2Lm_vR!4xY_2026}@db:5432/imagetourl?schema=public
+      - DATABASE_URL=postgresql://postgres:$${POSTGRES_PASSWORD:-pG9a2LmvR4xY2026}@db:5432/imagetourl?schema=public
       - BETTER_AUTH_SECRET=$${BETTER_AUTH_SECRET:-e7f9a8b1c4d2e3f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9}
       - BETTER_AUTH_URL=https://invoices.senovate.cloud
       - S3_ENDPOINT=http://minio:9000
       - S3_ACCESS_KEY_ID=$${MINIO_ROOT_USER:-admin}
-      - S3_SECRET_ACCESS_KEY=$${MINIO_ROOT_PASSWORD:-mN8#kLz_pQ!2wX_2026}
+      - S3_SECRET_ACCESS_KEY=$${MINIO_ROOT_PASSWORD:-mN8kLzpQ2wX2026}
       - S3_REGION=us-east-1
       - S3_BUCKET_IMAGES=images
       - S3_BUCKET_THUMBNAILS=thumbnails
@@ -93,5 +93,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  postgres_data_v3:
-  minio_data_v2:
+  postgres_data_v4:
+  minio_data_v3:
