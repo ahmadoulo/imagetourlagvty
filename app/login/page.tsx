@@ -30,7 +30,11 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/dashboard");
+      if (data?.user?.role === "ADMIN") {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
       router.refresh();
     } catch (err: any) {
       setError("An unexpected error occurred.");
