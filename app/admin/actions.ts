@@ -22,6 +22,29 @@ async function requireAdmin() {
   return user; // Return the full user object from DB
 }
 
+export async function requirePermission(permission: import("@/lib/permissions").Permission) {
+  const session = await auth.api.getSession({
+    headers: await headers()
+  });
+
+  if (!session || !session.user) {
+    throw new Error("Unauthorized");
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+  if (!user) throw new Error("Unauthorized");
+
+  const { hasPermission } = await import("@/lib/permissions");
+  
+  // Custom roles will be handled when we expand the Role table, 
+  // but for now, we just pass null for customPermissions
+  if (!hasPermission(user.role, null, permission)) {
+    throw new Error(`Forbidden: Requires ${permission} permission`);
+  }
+
+  return user;
+}
+
 export async function deleteUser(formData: FormData) {
   const currentUser = await requireAdmin();
   const userId = formData.get("userId") as string;
@@ -272,4 +295,74 @@ export async function updatePlan(formData: FormData) {
   const { redirect } = await import("next/navigation");
   redirect("/admin/plans");
 }
+
+export async function createUser(formData: FormData) {
+  await requireAdmin();
+  const name = formData.get("name") as string;
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
+  const role = formData.get("role") as string || "USER";
+
+  if (!name || !email || !password) throw new Error("Missing fields");
+
+  const bcrypt = require("bcryptjs");
+  const hashedPassword = await bcrypt.hash(password, 10);
+  
+  const id = Math.random().toString(36).substring(2, 15);
+
+  const user = await prisma.user.create({
+    data: {
+      id,
+      name,
+      email,
+      role,
+      emailVerified: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      Account: {
+        create: {
+          id: Math.random().toString(36).substring(2, 15),
+          accountId: email,
+          providerId: "credential",
+          password: hashedPassword,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }
+      }
+    }
+  });
+
+  await logAdminAction("CREATE_USER", user.id, "User", { email, role });
+  
+  const { redirect } = await import("next/navigation");
+  redirect("/admin/users");
+}
+
+export async function createRole(formData: FormData) {
+  // Creating roles requires the highest privilege or a specific manage:roles permission
+  await requirePermission("manage:roles");
+  
+  const name = formData.get("name") as string;
+  const description = formData.get("description") as string;
+  const permissions = formData.getAll("permissions") as string[];
+
+  if (!name) throw new Error("Role name required");
+
+  // Validate formatting
+  const formattedName = name.toUpperCase().replace(/\s+/g, '_');
+
+  const role = await prisma.role.create({
+    data: {
+      name: formattedName,
+      description,
+      permissions: JSON.stringify(permissions)
+    }
+  });
+
+  await logAdminAction("CREATE_ROLE", role.id, "Role", { name: formattedName, permissions });
+
+  const { redirect } = await import("next/navigation");
+  redirect("/admin/roles");
+}
+
 
