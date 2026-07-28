@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
     // 2. Parse FormData
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
+    const folderId = formData.get("folderId") as string | null;
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
@@ -105,6 +106,7 @@ export async function POST(req: NextRequest) {
       data: {
         id,
         userId: userId || null,
+        folderId: folderId || null,
         originalName,
         filename,
         extension,

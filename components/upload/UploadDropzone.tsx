@@ -23,7 +23,7 @@ interface UploadProgress {
   preview?: string;
 }
 
-export function UploadDropzone({ onUploadComplete }: { onUploadComplete?: () => void }) {
+export function UploadDropzone({ onUploadComplete, folderId }: { onUploadComplete?: () => void, folderId?: string | null }) {
   const [isDragActive, setIsDragActive] = useState(false);
   const [uploads, setUploads] = useState<UploadProgress[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -95,6 +95,9 @@ export function UploadDropzone({ onUploadComplete }: { onUploadComplete?: () => 
 
     const formData = new FormData();
     formData.append("file", upload.file);
+    if (folderId) {
+      formData.append("folderId", folderId);
+    }
 
     try {
       const xhr = new XMLHttpRequest();

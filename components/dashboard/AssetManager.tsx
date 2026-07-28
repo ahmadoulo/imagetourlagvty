@@ -287,9 +287,9 @@ export function AssetManager() {
         </AnimatePresence>
 
         {/* Upload Zone (Visible if no search and on first page) */}
-        {!search && filter === "all" && !folderId && images.length < 5 && page === 1 && (
-          <div className="p-6 pb-0 max-w-4xl mx-auto w-full">
-            <UploadDropzone onUploadComplete={() => fetchImages(true)} />
+        {!search && page === 1 && (
+          <div className="p-6 pb-0 max-w-4xl mx-auto w-full shrink-0">
+            <UploadDropzone onUploadComplete={() => fetchImages(true)} folderId={folderId} />
           </div>
         )}
 
