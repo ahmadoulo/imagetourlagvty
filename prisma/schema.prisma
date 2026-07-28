@@ -270,3 +270,14 @@ model Invoice {
   updatedAt        DateTime @updatedAt
 }
 
+model SystemSetting {
+  id               String   @id @default("global") // We usually only have one row or key-value rows. Let's do key-value.
+  key              String   @unique
+  value            String
+  description      String?
+  type             String   @default("string") // string, boolean, number, json
+  isPublic         Boolean  @default(false)
+  
+  updatedAt        DateTime @updatedAt
+}
+

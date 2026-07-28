@@ -6,6 +6,7 @@ import crypto from "crypto";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { logger } from "@/lib/logger";
+import { getSettings } from "@/lib/settings";
 
 const ALLOWED_MIME_TYPES = [
   "image/jpeg",
@@ -95,10 +96,17 @@ export async function POST(req: NextRequest) {
         }
       }
     } else {
-      // Guest logic: if we don't allow guest uploads, block it here. Or apply a hard limit for guests.
-      // Let's apply a strict 5MB limit for guests for safety.
-      if (file.size > 5 * 1024 * 1024) {
-        return NextResponse.json({ error: "Guests are limited to 5MB. Please sign in." }, { status: 400 });
+      // Guest logic
+      const settings = await getSettings();
+      const allowGuestUploads = settings["ALLOW_GUEST_UPLOADS"] !== false;
+      const maxGuestUploadSizeMB = Number(settings["MAX_GUEST_UPLOAD_SIZE_MB"] || 5);
+
+      if (!allowGuestUploads) {
+        return NextResponse.json({ error: "Guest uploads are disabled. Please sign in." }, { status: 403 });
+      }
+
+      if (file.size > maxGuestUploadSizeMB * 1024 * 1024) {
+        return NextResponse.json({ error: `Guests are limited to ${maxGuestUploadSizeMB}MB. Please sign in for larger limits.` }, { status: 400 });
       }
     }
 

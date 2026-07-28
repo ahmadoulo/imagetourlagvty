@@ -202,3 +202,25 @@ export async function deletePlan(formData: FormData) {
   revalidatePath("/admin/plans");
 }
 
+
+export async function updateSetting(formData: FormData) {
+  await requireAdmin();
+  const key = formData.get("key") as string;
+  const value = formData.get("value") as string;
+  const type = formData.get("type") as string || "string";
+  const description = formData.get("description") as string || "";
+
+  if (!key) throw new Error("Key is required");
+
+  await prisma.systemSetting.upsert({
+    where: { key },
+    update: { value, type, description },
+    create: { key, value, type, description, id: key }
+  });
+
+  const { clearSettingsCache } = await import("@/lib/settings");
+  await clearSettingsCache();
+
+  revalidatePath("/admin/settings");
+}
+
