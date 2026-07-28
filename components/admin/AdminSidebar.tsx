@@ -13,7 +13,8 @@ import {
   Settings,
   Activity,
   Shield,
-  Bell
+  Bell,
+  PackageOpen
 } from "lucide-react";
 
 const navItems = [
@@ -22,6 +23,7 @@ const navItems = [
   { name: "Images", href: "/admin/images", icon: ImageIcon },
   { name: "Storage", href: "/admin/storage", icon: HardDrive },
   { name: "Analytics", href: "/admin/analytics", icon: LineChart },
+  { name: "Plans", href: "/admin/plans", icon: PackageOpen },
   { name: "Subscriptions", href: "/admin/subscriptions", icon: CreditCard },
   { name: "System Health", href: "/admin/health", icon: Activity },
   { name: "Audit Logs", href: "/admin/logs", icon: Shield },

@@ -35,6 +35,48 @@ async function main() {
   }
   console.log('Roles seeded.');
 
+  // 1.5 Seed Plans
+  const plans = [
+    {
+      name: 'Free',
+      description: 'Perfect to get started',
+      price: 0,
+      currency: 'USD',
+      billingCycle: 'MONTHLY',
+      maxStorageMB: 1024,
+      maxBandwidthMB: 10240,
+      maxFileSizeMB: 10,
+      maxUploadsPerDay: 50,
+      maxFolders: 3,
+      features: '["basic_support"]',
+      isRecommended: false,
+      order: 1
+    },
+    {
+      name: 'Pro',
+      description: 'For professionals and power users',
+      price: 15,
+      currency: 'USD',
+      billingCycle: 'MONTHLY',
+      maxStorageMB: 51200,
+      maxBandwidthMB: 102400,
+      maxFileSizeMB: 50,
+      maxUploadsPerDay: 0, // unlimited
+      maxFolders: 0, // unlimited
+      features: '["priority_support", "custom_domains", "api_access"]',
+      isRecommended: true,
+      order: 2
+    }
+  ];
+
+  for (const planData of plans) {
+    const existing = await prisma.plan.findFirst({ where: { name: planData.name } });
+    if (!existing) {
+      await prisma.plan.create({ data: planData });
+    }
+  }
+  console.log('Plans seeded.');
+
   // 2. Create a Default Super Admin User
   const hashedPassword = await bcrypt.hash('SuperS3cure_2026_xY8p!', 10);
   

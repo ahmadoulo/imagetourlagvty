@@ -42,6 +42,8 @@ model User {
   folders       Folder[]
   apiKeys       ApiKey[]
   analytics     AnalyticsEvent[]
+  subscriptions Subscription[]
+  invoices      Invoice[]
   
   @@unique([email])
   @@map("user")
@@ -198,3 +200,73 @@ model Role {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+model Plan {
+  id                 String   @id @default(uuid())
+  name               String
+  description        String?
+  price              Float
+  currency           String   @default("USD")
+  billingCycle       String   @default("MONTHLY") // MONTHLY, YEARLY, ONCE
+  isActive           Boolean  @default(true)
+  isRecommended      Boolean  @default(false)
+  order              Int      @default(0)
+
+  // Limits (0 usually means unlimited or not allowed depending on business logic, here we will treat 0 as unlimited for limits)
+  maxStorageMB       Int      @default(1024) 
+  maxBandwidthMB     Int      @default(10240)
+  maxFileSizeMB      Int      @default(10)
+  maxUploadsPerDay   Int      @default(0)
+  maxUploadsPerMonth Int      @default(0)
+  maxFolders         Int      @default(0)
+  maxApiKeys         Int      @default(0)
+  
+  // Feature flags (JSON string array)
+  features           String   @default("[]") 
+
+  subscriptions      Subscription[]
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Subscription {
+  id                 String   @id @default(uuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId             String
+  plan               Plan     @relation(fields: [planId], references: [id])
+  
+  status             String   @default("ACTIVE") // ACTIVE, CANCELED, PAST_DUE
+  currentPeriodStart DateTime @default(now())
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean  @default(false)
+  
+  // Payment provider data
+  provider           String?
+  providerId         String?  @unique
+  customerId         String?  
+  
+  invoices           Invoice[]
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Invoice {
+  id               String   @id @default(uuid())
+  subscriptionId   String?
+  subscription     Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  amount           Float
+  currency         String
+  status           String   @default("PAID") // PAID, PENDING, FAILED
+  providerId       String?  @unique
+  invoiceUrl       String?
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+

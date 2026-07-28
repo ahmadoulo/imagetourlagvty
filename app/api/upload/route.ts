@@ -7,7 +7,6 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { logger } from "@/lib/logger";
 
-const MAX_UPLOAD_SIZE = 50 * 1024 * 1024; // 50MB
 const ALLOWED_MIME_TYPES = [
   "image/jpeg",
   "image/png",
@@ -37,13 +36,70 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // 3. Validation
-    if (file.size > MAX_UPLOAD_SIZE) {
-      return NextResponse.json({ error: "File exceeds 50MB limit" }, { status: 400 });
-    }
-
     if (!ALLOWED_MIME_TYPES.includes(file.type)) {
       return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
+    }
+
+    // Fetch Plan Limits
+    let plan = null;
+    if (userId) {
+      const activeSub = await prisma.subscription.findFirst({
+        where: { userId, status: "ACTIVE" },
+        include: { plan: true },
+        orderBy: { createdAt: "desc" }
+      });
+      plan = activeSub?.plan;
+    }
+    if (!plan) {
+      plan = await prisma.plan.findFirst({ where: { name: "Free" } });
+    }
+    
+    // Default fallback limits if no plan exists at all in DB
+    const maxFileSizeMB = plan?.maxFileSizeMB ?? 10;
+    const maxStorageMB = plan?.maxStorageMB ?? 1024;
+    const maxUploadsPerMonth = plan?.maxUploadsPerMonth ?? 0;
+
+    // Validate File Size
+    if (maxFileSizeMB > 0 && file.size > maxFileSizeMB * 1024 * 1024) {
+      return NextResponse.json({ error: `File exceeds plan limit of ${maxFileSizeMB}MB` }, { status: 400 });
+    }
+
+    // Validate Total Storage & Monthly Limits (for authenticated users only)
+    if (userId) {
+      const userUsage = await prisma.upload.aggregate({
+        where: { userId },
+        _sum: { size: true },
+        _count: { id: true }
+      });
+      
+      const currentStorage = userUsage._sum.size || 0;
+      if (maxStorageMB > 0 && (currentStorage + file.size) > maxStorageMB * 1024 * 1024) {
+        return NextResponse.json({ error: `Storage limit of ${maxStorageMB}MB exceeded. Upgrade your plan.` }, { status: 403 });
+      }
+
+      if (maxUploadsPerMonth > 0) {
+        // Find uploads in current month
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0,0,0,0);
+        
+        const monthlyUploads = await prisma.upload.count({
+          where: { 
+            userId,
+            createdAt: { gte: startOfMonth }
+          }
+        });
+        
+        if (monthlyUploads >= maxUploadsPerMonth) {
+          return NextResponse.json({ error: `Monthly upload limit of ${maxUploadsPerMonth} exceeded. Upgrade your plan.` }, { status: 403 });
+        }
+      }
+    } else {
+      // Guest logic: if we don't allow guest uploads, block it here. Or apply a hard limit for guests.
+      // Let's apply a strict 5MB limit for guests for safety.
+      if (file.size > 5 * 1024 * 1024) {
+        return NextResponse.json({ error: "Guests are limited to 5MB. Please sign in." }, { status: 400 });
+      }
     }
 
     const arrayBuffer = await file.arrayBuffer();

@@ -178,3 +178,27 @@ export async function resetUserPassword(formData: FormData) {
   return { success: true, newPassword };
 }
 
+
+export async function createPlan(formData: FormData) {
+  await requireAdmin();
+  const name = formData.get("name") as string;
+  const price = parseFloat(formData.get("price") as string || "0");
+  const maxStorageMB = parseInt(formData.get("maxStorageMB") as string || "1024");
+  const maxBandwidthMB = parseInt(formData.get("maxBandwidthMB") as string || "10240");
+  const maxFileSizeMB = parseInt(formData.get("maxFileSizeMB") as string || "10");
+  
+  await prisma.plan.create({
+    data: { name, price, maxStorageMB, maxBandwidthMB, maxFileSizeMB }
+  });
+  revalidatePath("/admin/plans");
+}
+
+export async function deletePlan(formData: FormData) {
+  await requireAdmin();
+  const planId = formData.get("planId") as string;
+  if (!planId) throw new Error("Plan ID required");
+
+  await prisma.plan.delete({ where: { id: planId } });
+  revalidatePath("/admin/plans");
+}
+
