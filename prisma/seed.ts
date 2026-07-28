@@ -6,6 +6,19 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Starting seed...');
 
+  // Fix existing incorrect providerIds if any
+  try {
+    const updated = await prisma.account.updateMany({
+      where: { providerId: 'credentials' },
+      data: { providerId: 'credential' }
+    });
+    if (updated.count > 0) {
+      console.log(`Fixed ${updated.count} accounts with wrong providerId`);
+    }
+  } catch (e) {
+    console.error("Failed to fix providerIds", e);
+  }
+
   // 1. Create a Default Admin/Premium User
   const hashedPassword = await bcrypt.hash('Admin123!', 10);
   
@@ -26,7 +39,7 @@ async function main() {
           create: {
             id: 'admin_account_1',
             accountId: 'admin_account_1',
-            providerId: 'credentials',
+            providerId: 'credential',
             password: hashedPassword,
             createdAt: new Date(),
             updatedAt: new Date()
