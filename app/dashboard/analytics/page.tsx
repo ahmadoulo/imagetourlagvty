@@ -15,10 +15,13 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import Link from "next/link";
 import { formatBytes } from "@/lib/utils";
+import { Sidebar } from "@/components/dashboard/Sidebar";
+import { useRouter } from "next/navigation";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#8dd1e1'];
 
 export default function AnalyticsDashboard() {
+  const router = useRouter();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState("30");
@@ -89,12 +92,32 @@ export default function AnalyticsDashboard() {
   };
 
   if (loading && !data) {
-    return <div className="flex h-[80vh] items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>;
+    return (
+      <div className="flex flex-col lg:flex-row h-[calc(100vh-56px)] w-full overflow-hidden bg-background">
+        <Sidebar 
+          currentFilter="all" 
+          onFilterChange={() => router.push("/dashboard")} 
+          currentFolder={null} 
+          onFolderChange={() => router.push("/dashboard")} 
+        />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl" id="analytics-dashboard">
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-56px)] w-full overflow-hidden bg-background">
+      <Sidebar 
+        currentFilter="all" 
+        onFilterChange={() => router.push("/dashboard")} 
+        currentFolder={null} 
+        onFolderChange={() => router.push("/dashboard")} 
+      />
+      <div className="flex-1 overflow-y-auto">
+        <div className="container mx-auto px-4 py-8 max-w-7xl" id="analytics-dashboard">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
           <p className="text-muted-foreground">Monitor your image performance and traffic</p>

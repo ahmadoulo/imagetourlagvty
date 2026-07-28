@@ -280,7 +280,7 @@ export function AssetManager() {
         {/* Upload Zone (Visible if no search and on first page) */}
         {!search && filter === "all" && !folderId && images.length < 5 && page === 1 && (
           <div className="p-6 pb-0 max-w-4xl mx-auto w-full">
-            <UploadDropzone />
+            <UploadDropzone onUploadComplete={() => fetchImages(true)} />
           </div>
         )}
 

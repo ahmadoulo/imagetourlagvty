@@ -70,11 +70,44 @@ export async function GET(
     // Cache transformed images heavily on CDN, immutable cache for originals
     resHeaders.set("Cache-Control", "public, max-age=31536000, immutable");
 
+    // Reusable analytics logging function
+    const logAnalytics = (bandwidth: number) => {
+      if (!uploadRecord) return;
+      const userAgent = req.headers.get("user-agent") || "Unknown";
+      let browser = "Unknown";
+      if (userAgent.includes("Chrome")) browser = "Chrome";
+      else if (userAgent.includes("Firefox")) browser = "Firefox";
+      else if (userAgent.includes("Safari") && !userAgent.includes("Chrome")) browser = "Safari";
+      else if (userAgent.includes("Edge")) browser = "Edge";
+      
+      const country = req.headers.get("x-vercel-ip-country") || req.headers.get("cf-ipcountry") || "Unknown";
+      const referrer = req.headers.get("referer") || "Direct";
+
+      prisma.analyticsEvent.create({
+        data: {
+          uploadId: uploadId,
+          userId: uploadRecord.userId,
+          eventType: "VIEW",
+          bandwidth: bandwidth,
+          country: country,
+          browser: browser,
+          referrer: referrer
+        }
+      }).catch(console.error);
+
+      prisma.upload.update({
+        where: { id: uploadId },
+        data: { downloads: { increment: 1 } }
+      }).catch(console.error);
+    };
+
     // Fast path: No transformations requested, just stream original S3 object directly
     if (!processingOptions) {
       if (response.ContentType) resHeaders.set("Content-Type", response.ContentType);
       if (response.ContentLength) resHeaders.set("Content-Length", response.ContentLength.toString());
       
+      logAnalytics(response.ContentLength || 0);
+
       const stream = response.Body.transformToWebStream();
       return new NextResponse(stream, { status: 200, headers: resHeaders });
     }
@@ -89,43 +122,16 @@ export async function GET(
       resHeaders.set("Content-Type", contentType);
       resHeaders.set("Content-Length", processedBuffer.length.toString());
       
-      // Parse User-Agent (simple approach, we can use UAParser later if needed)
-      const userAgent = req.headers.get("user-agent") || "Unknown";
-      let browser = "Unknown";
-      if (userAgent.includes("Chrome")) browser = "Chrome";
-      else if (userAgent.includes("Firefox")) browser = "Firefox";
-      else if (userAgent.includes("Safari") && !userAgent.includes("Chrome")) browser = "Safari";
-      else if (userAgent.includes("Edge")) browser = "Edge";
-      
-      const country = req.headers.get("x-vercel-ip-country") || req.headers.get("cf-ipcountry") || "Unknown";
-      const referrer = req.headers.get("referer") || "Direct";
-
-      if (uploadRecord) {
-        // Track View Event asynchronously
-        prisma.analyticsEvent.create({
-          data: {
-            uploadId: uploadId,
-            userId: uploadRecord.userId,
-            eventType: "VIEW",
-            bandwidth: processedBuffer.length,
-            country: country,
-            browser: browser,
-            referrer: referrer
-          }
-        }).catch(console.error);
-
-        // Increment total views on the upload itself
-        prisma.upload.update({
-          where: { id: uploadId },
-          data: { downloads: { increment: 1 } } // Technically views/downloads overlap here
-        }).catch(console.error);
-      }
+      logAnalytics(processedBuffer.length);
       
       return new NextResponse(processedBuffer as any, { status: 200, headers: resHeaders });
     } catch (processError) {
       console.error("Error processing image on the fly:", processError);
       // Fallback to original image if processing fails
       if (response.ContentType) resHeaders.set("Content-Type", response.ContentType);
+      
+      logAnalytics(response.ContentLength || 0);
+      
       return new NextResponse(response.Body.transformToWebStream(), { status: 200, headers: resHeaders });
     }
   } catch (error: any) {

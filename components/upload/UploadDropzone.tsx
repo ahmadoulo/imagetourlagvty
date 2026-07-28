@@ -23,7 +23,7 @@ interface UploadProgress {
   preview?: string;
 }
 
-export function UploadDropzone() {
+export function UploadDropzone({ onUploadComplete }: { onUploadComplete?: () => void }) {
   const [isDragActive, setIsDragActive] = useState(false);
   const [uploads, setUploads] = useState<UploadProgress[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -138,6 +138,10 @@ export function UploadDropzone() {
             : u
         )
       );
+
+      if (onUploadComplete) {
+        onUploadComplete();
+      }
     } catch (error: any) {
       setUploads((prev) =>
         prev.map((u) =>

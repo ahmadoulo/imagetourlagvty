@@ -56,7 +56,9 @@ export default async function CollectionPage({ params }: Props) {
     let isAuthorized = false;
     if (authCookie) {
       const passwordAttempt = authCookie.split('=')[1];
-      isAuthorized = await bcrypt.compare(passwordAttempt, collection.password);
+      if (passwordAttempt && typeof passwordAttempt === "string") {
+        isAuthorized = await bcrypt.compare(passwordAttempt, collection.password);
+      }
     }
 
     if (!isAuthorized) {

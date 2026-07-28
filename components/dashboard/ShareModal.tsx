@@ -19,9 +19,44 @@ export function ShareModal({ isOpen, onClose, items, type, folderId }: ShareModa
   const [expiresAt, setExpiresAt] = useState("");
   const [maxDownloads, setMaxDownloads] = useState("");
   const [loading, setLoading] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
 
-  // If sharing a folder, we fetch its current settings (skipped for simplicity in this demo, assumes default)
-  
+  useEffect(() => {
+    if (isOpen && type === "folder" && folderId) {
+      setLoading(true);
+      fetch(`/api/folders/${folderId}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data && !data.error) {
+            setVisibility(data.visibility || "PUBLIC");
+            if (data.expiresAt) {
+               const d = new Date(data.expiresAt);
+               d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+               setExpiresAt(d.toISOString().slice(0, 16));
+            } else {
+               setExpiresAt("");
+            }
+          }
+        })
+        .finally(() => {
+          setLoading(false);
+          setHasFetched(true);
+        });
+    } else {
+      setHasFetched(true);
+    }
+  }, [isOpen, type, folderId]);
+
+  // Reset form when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setVisibility("PUBLIC");
+      setPassword("");
+      setExpiresAt("");
+      setMaxDownloads("");
+      setHasFetched(false);
+    }
+  }, [isOpen]);
   const handleSave = async () => {
     setLoading(true);
     try {
@@ -98,7 +133,7 @@ export function ShareModal({ isOpen, onClose, items, type, folderId }: ShareModa
             <div className="grid grid-cols-3 gap-2">
               {[
                 { id: "PUBLIC", icon: Globe, label: "Public" },
-                { id: "UNLISTED", icon: LinkIcon, label: "Unlisted" },
+                { id: "UNLISTED", icon: LinkIcon, label: "Protected" },
                 { id: "PRIVATE", icon: EyeOff, label: "Private" },
               ].map((v) => (
                 <button
@@ -117,18 +152,20 @@ export function ShareModal({ isOpen, onClose, items, type, folderId }: ShareModa
           </div>
 
           <div className="space-y-4 pt-4 border-t border-border/40">
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
-                <Lock className="w-4 h-4 text-muted-foreground" /> Password Protection
-              </label>
-              <input 
-                type="password" 
-                placeholder="Leave blank for no password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              />
-            </div>
+            {visibility === "UNLISTED" && (
+              <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-muted-foreground" /> Password Protection
+                </label>
+                <input 
+                  type="password" 
+                  placeholder="Leave blank for no password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                />
+              </div>
+            )}
 
             <div className="space-y-2">
               <label className="text-sm font-medium flex items-center gap-2">

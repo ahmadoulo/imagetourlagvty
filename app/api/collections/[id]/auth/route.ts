@@ -22,6 +22,10 @@ export async function POST(
       return NextResponse.json({ success: true });
     }
 
+    if (!password || typeof password !== "string") {
+      return NextResponse.json({ error: "Invalid password format" }, { status: 400 });
+    }
+
     const isValid = await bcrypt.compare(password, collection.password);
     
     if (!isValid) {
