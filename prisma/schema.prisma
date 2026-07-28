@@ -44,6 +44,7 @@ model User {
   analytics     AnalyticsEvent[]
   subscriptions Subscription[]
   invoices      Invoice[]
+  auditLogs     AuditLog[]
   
   @@unique([email])
   @@map("user")
@@ -279,5 +280,19 @@ model SystemSetting {
   isPublic         Boolean  @default(false)
   
   updatedAt        DateTime @updatedAt
+}
+
+
+model AuditLog {
+  id               String   @id @default(uuid())
+  userId           String?
+  user             User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action           String
+  targetId         String?
+  targetType       String?
+  metadata         String?  // JSON details
+  ipAddress        String?
+  
+  createdAt        DateTime @default(now())
 }
 

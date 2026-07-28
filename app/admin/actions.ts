@@ -139,6 +139,8 @@ export async function changeUserStatus(formData: FormData) {
     data: { status: newStatus }
   });
 
+  await logAdminAction("CHANGE_USER_STATUS", userId, "User", { status: newStatus });
+
   revalidatePath("/admin/users");
 }
 
@@ -222,5 +224,29 @@ export async function updateSetting(formData: FormData) {
   await clearSettingsCache();
 
   revalidatePath("/admin/settings");
+}
+
+
+export async function logAdminAction(action: string, targetId?: string, targetType?: string, metadata?: object) {
+  try {
+    const { auth } = await import("@/lib/auth");
+    const { headers } = await import("next/headers");
+    const session = await auth.api.getSession({ headers: await headers() });
+    
+    if (session?.user?.id) {
+      await prisma.auditLog.create({
+        data: {
+          userId: session.user.id,
+          action,
+          targetId,
+          targetType,
+          metadata: metadata ? JSON.stringify(metadata) : null,
+          ipAddress: "server-action"
+        }
+      });
+    }
+  } catch (error) {
+    console.error("Failed to log admin action", error);
+  }
 }
 

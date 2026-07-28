@@ -23,7 +23,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <span className="hidden sm:inline-block">ImageToURL</span>
           </Link>
           <div className="flex items-center gap-4 text-sm">
-            <UserMenu email={session.user.email} />
+            <UserMenu email={session.user.email} role={session.user.role as string} />
             <ThemeToggle />
           </div>
         </div>

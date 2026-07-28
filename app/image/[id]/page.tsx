@@ -92,7 +92,7 @@ export default async function ImagePage({ params }: Props) {
             </div>
             {session && (
               <div className="pl-4 border-l border-border/50">
-                <UserMenu email={session.user.email} />
+                <UserMenu email={session.user.email} role={session.user.role as string} />
               </div>
             )}
             <div className={cn("pl-2", !session && "border-l border-border/50 ml-2")}>

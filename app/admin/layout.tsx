@@ -21,7 +21,7 @@ export default async function AdminLayout({
 
   const user = await prisma.user.findUnique({ where: { id: session.user.id } });
   
-  if (user?.role !== "ADMIN") {
+  if (user?.role !== "ADMIN" && user?.role !== "SUPER_ADMIN") {
     redirect("/dashboard");
   }
 

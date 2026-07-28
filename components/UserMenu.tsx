@@ -2,12 +2,12 @@
 
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { authClient } from "@/lib/auth-client";
-import { LogOut, LayoutDashboard, User } from "lucide-react";
+import { LogOut, LayoutDashboard, User, Shield } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-export function UserMenu({ email }: { email: string }) {
+export function UserMenu({ email, role }: { email: string; role?: string }) {
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -53,6 +53,15 @@ export function UserMenu({ email }: { email: string }) {
               <span>Dashboard</span>
             </Link>
           </DropdownMenu.Item>
+
+          {(role === "ADMIN" || role === "SUPER_ADMIN") && (
+            <DropdownMenu.Item asChild className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground">
+              <Link href="/admin" className="flex items-center w-full text-primary">
+                <Shield className="mr-2 h-4 w-4" />
+                <span>Admin Panel</span>
+              </Link>
+            </DropdownMenu.Item>
+          )}
           
           <DropdownMenu.Separator className="-mx-1 my-1 h-px bg-muted" />
           

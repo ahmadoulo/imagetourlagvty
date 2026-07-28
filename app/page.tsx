@@ -26,7 +26,10 @@ export default async function Home() {
           <nav className="flex items-center gap-5 text-sm font-medium">
             <Link href="#features" className="text-muted-foreground hover:text-foreground transition-colors hidden sm:block">Features</Link>
             {session ? (
-              <UserMenu email={session.user.email} />
+              <>
+                <Link href="/dashboard" className="text-sm font-medium hover:underline">Dashboard</Link>
+                <UserMenu email={session.user.email} role={session.user.role as string} />
+              </>
             ) : (
               <>
                 <Link href="/login" className="text-muted-foreground hover:text-foreground transition-colors">Log in</Link>
