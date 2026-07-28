@@ -19,13 +19,14 @@ const ALLOWED_MIME_TYPES = [
 ];
 
 export async function POST(req: NextRequest) {
+  let userId: string | undefined;
   try {
     // 1. Check Authentication (Optional for Guests, but they have limits)
     // For now we allow everyone, but we'll add limit logic later.
     const session = await auth.api.getSession({
       headers: await headers(),
     });
-    const userId = session?.user?.id;
+    userId = session?.user?.id;
 
     // 2. Parse FormData
     const formData = await req.formData();

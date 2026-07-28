@@ -24,8 +24,8 @@ export function PasswordPrompt({ collectionId }: { collectionId: string }) {
         // In a real app, store token in localStorage/cookies. For this demo we just reload.
         // We'll pass password as query param or use cookies if we had more time.
         // Easiest hack: set a cookie.
-        document.cookie = `collection_auth_${collectionId}=${password}; path=/`;
-        router.refresh();
+        document.cookie = `collection_auth_${collectionId}=${encodeURIComponent(password)}; path=/; max-age=3600`;
+        window.location.reload();
       } else {
         toast.error("Incorrect password");
       }
