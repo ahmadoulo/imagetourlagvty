@@ -30,7 +30,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json tsconfig.json* ./
 COPY prisma ./prisma/
-CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss && npx prisma db seed"]
+CMD ["sh", "-c", "npx prisma generate && npx prisma db push --skip-generate --accept-data-loss && npx prisma db seed"]
 
 # Production image, copy all the files and run next
 FROM base AS runner
