@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { PasswordPrompt } from "./client";
+import { DownloadZipButton } from "@/components/dashboard/DownloadZipButton";
 import { Download, Folder, Grid } from "lucide-react";
 import Link from "next/link";
 import bcrypt from "bcryptjs";
@@ -81,32 +82,7 @@ export default async function CollectionPage({ params }: Props) {
           </Link>
           <div className="flex items-center gap-4">
 
-             <button 
-                onClick={() => {
-                   fetch('/api/download/zip', {
-                     method: 'POST',
-                     headers: { 'Content-Type': 'application/json' },
-                     body: JSON.stringify({ collectionId: collection.id })
-                   }).then(async res => {
-                     if(res.ok) {
-                       const blob = await res.blob();
-                       const url = window.URL.createObjectURL(blob);
-                       const a = document.createElement('a');
-                       a.href = url;
-                       a.download = `${collection.name}.zip`;
-                       document.body.appendChild(a);
-                       a.click();
-                       a.remove();
-                     } else {
-                       alert('Failed to download zip');
-                     }
-                   })
-                }}
-                className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all bg-primary text-primary-foreground shadow-sm shadow-primary/20 hover:bg-primary/90 h-9 px-4 py-2"
-             >
-                <Download className="w-4 h-4 mr-2" />
-                Download All (ZIP)
-             </button>
+             <DownloadZipButton collectionId={collection.id} collectionName={collection.name} />
           </div>
         </div>
       </header>

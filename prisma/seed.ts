@@ -7,9 +7,9 @@ async function main() {
   console.log('Starting seed...');
 
   // 1. Create a Default Admin/Premium User
-  const hashedPassword = await bcrypt.hash('password123', 10);
+  const hashedPassword = await bcrypt.hash('Admin123!', 10);
   
-  const adminEmail = 'admin@imagetourl.com';
+  const adminEmail = 'superadmin@imagetourl.com';
   let admin = await prisma.user.findUnique({ where: { email: adminEmail } });
   
   if (!admin) {
@@ -34,9 +34,9 @@ async function main() {
         }
       }
     });
-    console.log('Created Admin user.');
+    console.log(`Created Admin user: ${adminEmail} / Admin123!`);
   } else {
-    console.log('Admin user already exists.');
+    console.log(`Admin user already exists: ${adminEmail} / Admin123!`);
   }
 
   // 2. Create some Folders/Collections
