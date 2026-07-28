@@ -43,12 +43,12 @@ export default async function EditPlanPage({ params }: { params: Promise<{ id: s
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Storage Limit (MB)</label>
+              <label className="text-sm font-medium">Storage Limit (MB) <span className="text-muted-foreground text-xs">(0 = Unlimited)</span></label>
               <input type="number" name="maxStorageMB" defaultValue={plan.maxStorageMB} required min="0" className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-primary" />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Bandwidth Limit (MB/mo)</label>
+              <label className="text-sm font-medium">Bandwidth Limit (MB/mo) <span className="text-muted-foreground text-xs">(0 = Unlimited)</span></label>
               <input type="number" name="maxBandwidthMB" defaultValue={plan.maxBandwidthMB} required min="0" className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-primary" />
             </div>
 
@@ -56,6 +56,44 @@ export default async function EditPlanPage({ params }: { params: Promise<{ id: s
               <label className="text-sm font-medium">Max File Size (MB)</label>
               <input type="number" name="maxFileSizeMB" defaultValue={plan.maxFileSizeMB} required min="1" className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-primary" />
             </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Max Uploads / Day <span className="text-muted-foreground text-xs">(0 = Unlimited)</span></label>
+              <input type="number" name="maxUploadsPerDay" defaultValue={plan.maxUploadsPerDay} required min="0" className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-primary" />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Max Uploads / Month <span className="text-muted-foreground text-xs">(0 = Unlimited)</span></label>
+              <input type="number" name="maxUploadsPerMonth" defaultValue={plan.maxUploadsPerMonth} required min="0" className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-primary" />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Max Folders <span className="text-muted-foreground text-xs">(0 = Unlimited)</span></label>
+              <input type="number" name="maxFolders" defaultValue={plan.maxFolders} required min="0" className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-primary" />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Max API Keys <span className="text-muted-foreground text-xs">(0 = Unlimited)</span></label>
+              <input type="number" name="maxApiKeys" defaultValue={plan.maxApiKeys} required min="0" className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-primary" />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" name="isActive" value="true" defaultChecked={plan.isActive} className="w-4 h-4 text-primary focus:ring-primary/50 rounded border-gray-300" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Plan is Active</span>
+                <span className="text-xs text-muted-foreground">Inactive plans cannot be purchased.</span>
+              </div>
+            </label>
+            
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" name="isRecommended" value="true" defaultChecked={plan.isRecommended} className="w-4 h-4 text-primary focus:ring-primary/50 rounded border-gray-300" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Recommended Plan</span>
+                <span className="text-xs text-muted-foreground">Highlights this plan on the pricing page.</span>
+              </div>
+            </label>
           </div>
 
           <div className="pt-4 border-t flex justify-end">

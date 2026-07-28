@@ -212,10 +212,35 @@ export async function createPlan(formData: FormData) {
   const maxBandwidthMB = parseInt(formData.get("maxBandwidthMB") as string || "10240");
   const maxFileSizeMB = parseInt(formData.get("maxFileSizeMB") as string || "10");
   
-  await prisma.plan.create({
-    data: { name, price, maxStorageMB, maxBandwidthMB, maxFileSizeMB }
+  const maxUploadsPerDay = parseInt(formData.get("maxUploadsPerDay") as string || "0");
+  const maxUploadsPerMonth = parseInt(formData.get("maxUploadsPerMonth") as string || "0");
+  const maxFolders = parseInt(formData.get("maxFolders") as string || "0");
+  const maxApiKeys = parseInt(formData.get("maxApiKeys") as string || "0");
+  
+  const isActive = formData.get("isActive") === "true";
+  const isRecommended = formData.get("isRecommended") === "true";
+  
+  const plan = await prisma.plan.create({
+    data: { 
+      name, 
+      price, 
+      maxStorageMB, 
+      maxBandwidthMB, 
+      maxFileSizeMB,
+      maxUploadsPerDay,
+      maxUploadsPerMonth,
+      maxFolders,
+      maxApiKeys,
+      isActive,
+      isRecommended
+    }
   });
+  
+  await logAdminAction("CREATE_PLAN", plan.id, "Plan", { name });
+  
   revalidatePath("/admin/plans");
+  const { redirect } = await import("next/navigation");
+  redirect("/admin/plans");
 }
 
 export async function deletePlan(formData: FormData) {
@@ -284,10 +309,30 @@ export async function updatePlan(formData: FormData) {
   const maxStorageMB = parseInt(formData.get("maxStorageMB") as string);
   const maxBandwidthMB = parseInt(formData.get("maxBandwidthMB") as string);
   const maxFileSizeMB = parseInt(formData.get("maxFileSizeMB") as string);
+  
+  const maxUploadsPerDay = parseInt(formData.get("maxUploadsPerDay") as string || "0");
+  const maxUploadsPerMonth = parseInt(formData.get("maxUploadsPerMonth") as string || "0");
+  const maxFolders = parseInt(formData.get("maxFolders") as string || "0");
+  const maxApiKeys = parseInt(formData.get("maxApiKeys") as string || "0");
+  
+  const isActive = formData.get("isActive") === "true";
+  const isRecommended = formData.get("isRecommended") === "true";
 
   await prisma.plan.update({
     where: { id },
-    data: { name, price, maxStorageMB, maxBandwidthMB, maxFileSizeMB }
+    data: { 
+      name, 
+      price, 
+      maxStorageMB, 
+      maxBandwidthMB, 
+      maxFileSizeMB,
+      maxUploadsPerDay,
+      maxUploadsPerMonth,
+      maxFolders,
+      maxApiKeys,
+      isActive,
+      isRecommended
+    }
   });
 
   await logAdminAction("UPDATE_PLAN", id, "Plan", { name });
