@@ -1,15 +1,15 @@
 "use client";
 
-import { ShieldAlert, ShieldCheck, Trash2, Ban } from "lucide-react";
+import { ShieldAlert, ShieldCheck, Trash2, Ban, Play, PauseCircle, MailCheck, KeyRound } from "lucide-react";
 import { useTransition } from "react";
-import { deleteUser, changeUserRole } from "../actions";
+import { deleteUser, changeUserRole, changeUserStatus, verifyUserEmail, resetUserPassword } from "../actions";
 
 export function UserActions({
   user,
   currentUserId,
   superAdminCount,
 }: {
-  user: { id: string; role: string; name: string };
+  user: { id: string; role: string; name: string; status: "ACTIVE" | "SUSPENDED" | "BANNED"; emailVerified: boolean };
   currentUserId: string;
   superAdminCount: number;
 }) {
@@ -56,8 +56,72 @@ export function UserActions({
     });
   };
 
+  const handleChangeStatus = (newStatus: "ACTIVE" | "SUSPENDED" | "BANNED") => {
+    if (isCurrentUser && newStatus !== "ACTIVE") {
+      alert("You cannot ban or suspend your own account.");
+      return;
+    }
+    if (isOnlySuperAdmin && newStatus !== "ACTIVE") {
+      alert("You cannot ban or suspend the only remaining Super Admin.");
+      return;
+    }
+    
+    let actionName = newStatus === "ACTIVE" ? "Activate" : newStatus === "SUSPENDED" ? "Suspend" : "Ban";
+    if (confirm(`Are you sure you want to ${actionName.toLowerCase()} ${user.name}?`)) {
+      startTransition(async () => {
+        const formData = new FormData();
+        formData.append("userId", user.id);
+        formData.append("status", newStatus);
+        await changeUserStatus(formData);
+      });
+    }
+  };
+
+  const handleVerifyEmail = () => {
+    if (confirm(`Mark ${user.name}'s email as verified?`)) {
+      startTransition(async () => {
+        const formData = new FormData();
+        formData.append("userId", user.id);
+        await verifyUserEmail(formData);
+      });
+    }
+  };
+
+  const handleResetPassword = () => {
+    if (confirm(`Are you sure you want to force reset the password for ${user.name}?`)) {
+      startTransition(async () => {
+        const formData = new FormData();
+        formData.append("userId", user.id);
+        const res = await resetUserPassword(formData);
+        if (res && res.success) {
+          alert(`Password successfully reset! The new temporary password is: \n\n${res.newPassword}\n\nPlease copy and send this to the user securely.`);
+        }
+      });
+    }
+  };
+
   return (
     <div className="flex justify-end gap-2">
+      {!user.emailVerified && (
+        <button
+          onClick={handleVerifyEmail}
+          disabled={isPending}
+          className="p-2 hover:bg-blue-500/10 rounded-md transition-colors text-muted-foreground hover:text-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Verify Email Manually"
+        >
+          <MailCheck className="w-4 h-4" />
+        </button>
+      )}
+
+      <button
+        onClick={handleResetPassword}
+        disabled={isPending}
+        className="p-2 hover:bg-muted rounded-md transition-colors text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+        title="Force Reset Password"
+      >
+        <KeyRound className="w-4 h-4" />
+      </button>
+
       <button
         onClick={handleChangeRole}
         disabled={isPending || (isCurrentUser && isOnlySuperAdmin)}
@@ -70,6 +134,36 @@ export function UserActions({
           <ShieldAlert className="w-4 h-4" />
         )}
       </button>
+
+      {user.status === "ACTIVE" ? (
+        <>
+          <button
+            onClick={() => handleChangeStatus("SUSPENDED")}
+            disabled={isPending || isCurrentUser || isOnlySuperAdmin}
+            className="p-2 hover:bg-orange-500/10 rounded-md transition-colors text-muted-foreground hover:text-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Suspend User"
+          >
+            <PauseCircle className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => handleChangeStatus("BANNED")}
+            disabled={isPending || isCurrentUser || isOnlySuperAdmin}
+            className="p-2 hover:bg-destructive/10 rounded-md transition-colors text-muted-foreground hover:text-destructive disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Ban User"
+          >
+            <Ban className="w-4 h-4" />
+          </button>
+        </>
+      ) : (
+        <button
+          onClick={() => handleChangeStatus("ACTIVE")}
+          disabled={isPending}
+          className="p-2 hover:bg-green-500/10 rounded-md transition-colors text-muted-foreground hover:text-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Activate User"
+        >
+          <Play className="w-4 h-4" />
+        </button>
+      )}
 
       <button
         onClick={handleDelete}

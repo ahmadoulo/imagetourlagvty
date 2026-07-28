@@ -7,21 +7,25 @@ import { headers } from "next/headers";
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ query?: string; page?: string }>;
+  searchParams: Promise<{ query?: string; page?: string; status?: string }>;
 }) {
-  const { query, page } = await searchParams;
+  const { query, page, status } = await searchParams;
   const currentPage = parseInt(page || "1");
   const limit = 20;
   const skip = (currentPage - 1) * limit;
 
-  const where = query
-    ? {
-        OR: [
-          { name: { contains: query, mode: "insensitive" as any } },
-          { email: { contains: query, mode: "insensitive" as any } },
-        ],
-      }
-    : {};
+  const where: any = {};
+  
+  if (query) {
+    where.OR = [
+      { name: { contains: query, mode: "insensitive" } },
+      { email: { contains: query, mode: "insensitive" } },
+    ];
+  }
+  
+  if (status) {
+    where.status = status;
+  }
 
   const session = await auth.api.getSession({ headers: await headers() });
   const currentUserId = session?.user?.id || "";
@@ -50,16 +54,36 @@ export default async function AdminUsersPage({
           <p className="text-muted-foreground mt-1">Manage platform users, roles, and permissions.</p>
         </div>
         
-        {/* Simple search form (will trigger a page reload which is fine for SSR) */}
-        <form className="relative w-full md:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            type="text"
-            name="query"
-            defaultValue={query}
-            placeholder="Search users..."
-            className="w-full pl-9 pr-4 py-2 bg-background border border-border/60 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 shadow-sm"
-          />
+        {/* Simple search form */}
+        <form className="flex items-center gap-2 w-full md:w-auto">
+          <div className="relative w-full md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              name="query"
+              defaultValue={query}
+              placeholder="Search users..."
+              className="w-full pl-9 pr-4 py-2 bg-background border border-border/60 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 shadow-sm"
+            />
+          </div>
+          <select 
+            name="status" 
+            defaultValue={status || ""}
+            onChange={(e) => e.target.form?.submit()}
+            className="px-3 py-2 bg-background border border-border/60 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 shadow-sm"
+          >
+            <option value="">All Statuses</option>
+            <option value="ACTIVE">Active</option>
+            <option value="SUSPENDED">Suspended</option>
+            <option value="BANNED">Banned</option>
+          </select>
+          <a
+            href="/api/admin/export/users"
+            download
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors whitespace-nowrap"
+          >
+            Export CSV
+          </a>
         </form>
       </div>
 
@@ -69,6 +93,7 @@ export default async function AdminUsersPage({
             <tr>
               <th className="px-6 py-4 font-medium text-muted-foreground">User</th>
               <th className="px-6 py-4 font-medium text-muted-foreground">Role</th>
+              <th className="px-6 py-4 font-medium text-muted-foreground">Status</th>
               <th className="px-6 py-4 font-medium text-muted-foreground">Uploads</th>
               <th className="px-6 py-4 font-medium text-muted-foreground">Joined</th>
               <th className="px-6 py-4 font-medium text-muted-foreground text-right">Actions</th>
@@ -88,6 +113,15 @@ export default async function AdminUsersPage({
                     'bg-secondary text-secondary-foreground'
                   }`}>
                     {user.role}
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    user.status === 'ACTIVE' ? 'bg-green-500/10 text-green-600' :
+                    user.status === 'SUSPENDED' ? 'bg-orange-500/10 text-orange-600' :
+                    'bg-destructive/10 text-destructive'
+                  }`}>
+                    {user.status}
                   </span>
                 </td>
                 <td className="px-6 py-4">

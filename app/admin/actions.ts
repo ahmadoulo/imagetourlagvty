@@ -112,3 +112,69 @@ export async function deleteImage(formData: FormData) {
 
   revalidatePath("/admin/images");
 }
+
+export async function changeUserStatus(formData: FormData) {
+  const currentUser = await requireAdmin();
+  const userId = formData.get("userId") as string;
+  const newStatus = formData.get("status") as "ACTIVE" | "SUSPENDED" | "BANNED";
+  
+  if (!userId || !newStatus) throw new Error("Invalid parameters");
+
+  // CRITICAL SAFEGUARD: A Super Admin cannot change their own status to anything other than ACTIVE
+  if (userId === currentUser.id && newStatus !== "ACTIVE") {
+    throw new Error("You cannot ban or suspend your own account.");
+  }
+
+  // Check if target is a SUPER_ADMIN
+  const targetUser = await prisma.user.findUnique({ where: { id: userId } });
+  if (targetUser?.role === "SUPER_ADMIN" && newStatus !== "ACTIVE") {
+    const superAdminCount = await prisma.user.count({ where: { role: "SUPER_ADMIN" } });
+    if (superAdminCount <= 1) {
+      throw new Error("Cannot ban or suspend the only remaining Super Admin.");
+    }
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { status: newStatus }
+  });
+
+  revalidatePath("/admin/users");
+}
+
+export async function verifyUserEmail(formData: FormData) {
+  await requireAdmin();
+  const userId = formData.get("userId") as string;
+  if (!userId) throw new Error("User ID required");
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { emailVerified: true }
+  });
+
+  revalidatePath("/admin/users");
+}
+
+export async function resetUserPassword(formData: FormData) {
+  await requireAdmin();
+  const userId = formData.get("userId") as string;
+  if (!userId) throw new Error("User ID required");
+
+  const newPassword = Math.random().toString(36).slice(-10) + "A1!";
+  const bcrypt = require("bcryptjs");
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  const account = await prisma.account.findFirst({
+    where: { userId, providerId: "credential" }
+  });
+
+  if (account) {
+    await prisma.account.update({
+      where: { id: account.id },
+      data: { password: hashedPassword }
+    });
+  }
+
+  return { success: true, newPassword };
+}
+
