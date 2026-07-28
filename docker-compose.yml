@@ -9,7 +9,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data_v2:/var/lib/postgresql/data
+      - postgres_data_v3:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d imagetourl"]
       interval: 5s
@@ -28,7 +28,7 @@ services:
       - "9000:9000"
       - "9001:9001"
     volumes:
-      - minio_data:/data
+      - minio_data_v2:/data
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       interval: 5s
@@ -93,5 +93,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  postgres_data_v2:
-  minio_data:
+  postgres_data_v3:
+  minio_data_v2:
