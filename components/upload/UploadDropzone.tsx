@@ -38,6 +38,10 @@ export function UploadDropzone() {
     }
   }, []);
 
+  const removeUpload = useCallback((id: string) => {
+    setUploads((prev) => prev.filter((u) => u.id !== id));
+  }, []);
+
   const processFiles = useCallback((files: File[]) => {
     const newUploads = files.map((file) => ({
       id: Math.random().toString(36).substring(7),
