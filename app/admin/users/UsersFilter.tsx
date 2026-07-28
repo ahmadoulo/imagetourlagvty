@@ -18,7 +18,7 @@ export function UsersFilter({ defaultQuery, defaultStatus }: { defaultQuery?: st
       if (query) params.set("query", query);
       if (status) params.set("status", status);
       
-      router.push(` + "`?${params.toString()}`" + `);
+      router.push(`?${params.toString()}`);
     }}>
       <div className="relative w-full md:w-64">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
