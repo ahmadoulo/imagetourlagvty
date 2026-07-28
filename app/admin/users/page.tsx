@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { Search, ShieldAlert, ShieldCheck, Trash2 } from "lucide-react";
-import { deleteUser, changeUserRole } from "../actions";
+import { Search } from "lucide-react";
+import { UserActions } from "./user-actions";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 export default async function AdminUsersPage({
   searchParams,
@@ -21,7 +23,10 @@ export default async function AdminUsersPage({
       }
     : {};
 
-  const [users, total] = await Promise.all([
+  const session = await auth.api.getSession({ headers: await headers() });
+  const currentUserId = session?.user?.id || "";
+
+  const [users, total, superAdminCount] = await Promise.all([
     prisma.user.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -32,6 +37,7 @@ export default async function AdminUsersPage({
       }
     }),
     prisma.user.count({ where }),
+    prisma.user.count({ where: { role: "SUPER_ADMIN" } })
   ]);
 
   const totalPages = Math.ceil(total / limit);
@@ -91,20 +97,12 @@ export default async function AdminUsersPage({
                 <td className="px-6 py-4 text-muted-foreground">
                   {user.createdAt.toLocaleDateString()}
                 </td>
-                <td className="px-6 py-4 text-right flex justify-end gap-2">
-                  <form action={changeUserRole}>
-                    <input type="hidden" name="userId" value={user.id} />
-                    <input type="hidden" name="currentRole" value={user.role} />
-                    <button type="submit" className="p-2 hover:bg-muted rounded-md transition-colors text-muted-foreground hover:text-foreground" title={user.role === 'ADMIN' ? "Revoke Admin" : "Make Admin"}>
-                      {user.role === 'ADMIN' ? <ShieldCheck className="w-4 h-4 text-primary" /> : <ShieldAlert className="w-4 h-4" />}
-                    </button>
-                  </form>
-                  <form action={deleteUser}>
-                    <input type="hidden" name="userId" value={user.id} />
-                    <button type="submit" className="p-2 hover:bg-destructive/10 rounded-md transition-colors text-muted-foreground hover:text-destructive" title="Delete User">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </form>
+                <td className="px-6 py-4 text-right">
+                  <UserActions 
+                    user={user} 
+                    currentUserId={currentUserId} 
+                    superAdminCount={superAdminCount} 
+                  />
                 </td>
               </tr>
             ))}

@@ -19,7 +19,23 @@ async function main() {
     console.error("Failed to fix providerIds", e);
   }
 
-  // 1. Create a Default Admin/Premium User
+  // 1. Seed Roles
+  const roles = [
+    { name: 'SUPER_ADMIN', description: 'Super Administrator', permissions: '["*"]' },
+    { name: 'ADMIN', description: 'Administrator', permissions: '["manage:users", "manage:plans", "manage:settings"]' },
+    { name: 'USER', description: 'Standard User', permissions: '[]' }
+  ];
+
+  for (const roleData of roles) {
+    await prisma.role.upsert({
+      where: { name: roleData.name },
+      update: {},
+      create: roleData
+    });
+  }
+  console.log('Roles seeded.');
+
+  // 2. Create a Default Super Admin User
   const hashedPassword = await bcrypt.hash('SuperS3cure_2026_xY8p!', 10);
   
   const adminEmail = 'superadmin@imagetourl.com';
@@ -32,7 +48,8 @@ async function main() {
         name: 'Admin User',
         email: adminEmail,
         emailVerified: true,
-        role: 'ADMIN',
+        role: 'SUPER_ADMIN',
+        status: 'ACTIVE',
         createdAt: new Date(),
         updatedAt: new Date(),
         Account: {
@@ -50,9 +67,18 @@ async function main() {
     console.log(`Created Admin user: ${adminEmail} / SuperS3cure_2026_xY8p!`);
   } else {
     console.log(`Admin user already exists: ${adminEmail} / SuperS3cure_2026_xY8p!`);
+    
+    // Ensure existing admin is promoted to SUPER_ADMIN
+    if (admin.role !== 'SUPER_ADMIN') {
+      await prisma.user.update({
+        where: { email: adminEmail },
+        data: { role: 'SUPER_ADMIN', status: 'ACTIVE' }
+      });
+      console.log('Updated existing admin to SUPER_ADMIN role.');
+    }
   }
 
-  // 2. Create some Folders/Collections
+  // 3. Create some Folders/Collections
   const folderNames = ['Vacation 2026', 'Work Assets', 'Public Gallery'];
   for (const name of folderNames) {
     const existing = await prisma.folder.findFirst({ where: { name, userId: admin.id } });

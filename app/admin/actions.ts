@@ -15,17 +15,31 @@ async function requireAdmin() {
   }
 
   const user = await prisma.user.findUnique({ where: { id: session.user.id } });
-  if (user?.role !== "ADMIN") {
+  if (user?.role !== "ADMIN" && user?.role !== "SUPER_ADMIN") {
     throw new Error("Forbidden");
   }
 
-  return session.user;
+  return user; // Return the full user object from DB
 }
 
 export async function deleteUser(formData: FormData) {
-  await requireAdmin();
+  const currentUser = await requireAdmin();
   const userId = formData.get("userId") as string;
   if (!userId) throw new Error("User ID required");
+
+  // CRITICAL SAFEGUARD: A Super Admin cannot delete themselves
+  if (userId === currentUser.id) {
+    throw new Error("You cannot delete your own account.");
+  }
+
+  // Check if target is a SUPER_ADMIN
+  const targetUser = await prisma.user.findUnique({ where: { id: userId } });
+  if (targetUser?.role === "SUPER_ADMIN") {
+    const superAdminCount = await prisma.user.count({ where: { role: "SUPER_ADMIN" } });
+    if (superAdminCount <= 1) {
+      throw new Error("Cannot delete the only remaining Super Admin.");
+    }
+  }
 
   // Since we set up Cascade delete for Uploads and Folders in Phase 2,
   // deleting the user here will automatically delete all their uploads in the DB.
@@ -38,13 +52,22 @@ export async function deleteUser(formData: FormData) {
 }
 
 export async function changeUserRole(formData: FormData) {
-  await requireAdmin();
+  const currentUser = await requireAdmin();
   const userId = formData.get("userId") as string;
   const currentRole = formData.get("currentRole") as string;
   
   if (!userId) throw new Error("User ID required");
 
-  const newRole = currentRole === "ADMIN" ? "USER" : "ADMIN";
+  const newRole = currentRole === "SUPER_ADMIN" ? "USER" : (currentRole === "ADMIN" ? "USER" : "ADMIN");
+
+  // CRITICAL SAFEGUARD: Self-demotion checks
+  if (userId === currentUser.id && currentRole === "SUPER_ADMIN") {
+    const superAdminCount = await prisma.user.count({ where: { role: "SUPER_ADMIN" } });
+    if (superAdminCount <= 1) {
+      throw new Error("You are the only remaining Super Admin. You cannot demote yourself.");
+    }
+    // If > 1, the action is allowed (UI handles confirmation dialog)
+  }
 
   await prisma.user.update({
     where: { id: userId },
