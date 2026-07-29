@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { CreditCard, Search, Calendar, User as UserIcon, CheckCircle2, AlertCircle, Clock } from "lucide-react";
-import Link from "next/link";
 import { SubscriptionsFilter } from "./SubscriptionsFilter";
+import { ChangePlanDialog } from "./ChangePlanDialog";
 
 export default async function AdminSubscriptionsPage({
   searchParams,
@@ -15,29 +15,32 @@ export default async function AdminSubscriptionsPage({
 
   const where: any = {};
   if (query) {
-    where.user = {
-      OR: [
-        { name: { contains: query, mode: "insensitive" } },
-        { email: { contains: query, mode: "insensitive" } },
-      ]
-    };
-  }
-  if (status) {
-    where.status = status;
+    where.OR = [
+      { name: { contains: query, mode: "insensitive" } },
+      { email: { contains: query, mode: "insensitive" } },
+    ];
   }
 
-  const [subscriptions, total] = await Promise.all([
-    prisma.subscription.findMany({
+  // Fetch all plans to pass to the dropdown
+  const allPlans = await prisma.plan.findMany({ orderBy: { order: "asc" } });
+  const freePlan = allPlans.find(p => p.price === 0);
+
+  // We query Users instead of Subscriptions so we don't miss users who haven't uploaded yet (lazy sub)
+  const [users, total] = await Promise.all([
+    prisma.user.findMany({
       where,
       orderBy: { createdAt: "desc" },
       skip,
       take: limit,
       include: {
-        user: { select: { name: true, email: true } },
-        plan: { select: { name: true, price: true, currency: true } }
+        subscriptions: {
+          where: { status: "ACTIVE" },
+          include: { plan: true },
+          take: 1
+        }
       }
     }),
-    prisma.subscription.count({ where })
+    prisma.user.count({ where })
   ]);
 
   const totalPages = Math.ceil(total / limit);
@@ -46,8 +49,8 @@ export default async function AdminSubscriptionsPage({
     <div className="p-8 space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Subscriptions</h1>
-          <p className="text-muted-foreground mt-1">Manage user plans and billing.</p>
+          <h1 className="text-3xl font-bold tracking-tight">User Subscriptions</h1>
+          <p className="text-muted-foreground mt-1">Manage platform users, their plans, and billing.</p>
         </div>
         
         <SubscriptionsFilter defaultQuery={query} defaultStatus={status} />
@@ -58,57 +61,62 @@ export default async function AdminSubscriptionsPage({
           <thead className="bg-muted/50 border-b">
             <tr>
               <th className="px-6 py-4 font-medium text-muted-foreground">User</th>
-              <th className="px-6 py-4 font-medium text-muted-foreground">Plan</th>
+              <th className="px-6 py-4 font-medium text-muted-foreground">Active Plan</th>
               <th className="px-6 py-4 font-medium text-muted-foreground">Status</th>
-              <th className="px-6 py-4 font-medium text-muted-foreground">Provider</th>
               <th className="px-6 py-4 font-medium text-muted-foreground">Period End</th>
+              <th className="px-6 py-4 font-medium text-muted-foreground text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y">
-            {subscriptions.map((sub) => (
-              <tr key={sub.id} className="hover:bg-muted/20 transition-colors">
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
-                      {sub.user.name.charAt(0).toUpperCase()}
+            {users.map((user) => {
+              const activeSub = user.subscriptions[0];
+              const plan = activeSub?.plan || freePlan;
+              
+              return (
+                <tr key={user.id} className="hover:bg-muted/20 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
+                        {user.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="font-medium text-foreground">{user.name}</div>
+                        <div className="text-muted-foreground text-xs">{user.email}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-medium text-foreground">{sub.user.name}</div>
-                      <div className="text-muted-foreground text-xs">{sub.user.email}</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="font-medium">{sub.plan.name}</div>
-                  <div className="text-muted-foreground text-xs">${sub.plan.price} {sub.plan.currency}</div>
-                </td>
-                <td className="px-6 py-4">
-                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
-                    sub.status === 'ACTIVE' ? 'bg-green-500/10 text-green-600' :
-                    sub.status === 'CANCELED' ? 'bg-orange-500/10 text-orange-600' :
-                    'bg-destructive/10 text-destructive'
-                  }`}>
-                    {sub.status === 'ACTIVE' && <CheckCircle2 className="w-3 h-3" />}
-                    {sub.status === 'CANCELED' && <Clock className="w-3 h-3" />}
-                    {sub.status === 'PAST_DUE' && <AlertCircle className="w-3 h-3" />}
-                    {sub.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-foreground">{sub.provider || "Manual"}</div>
-                  {sub.providerId && <div className="text-muted-foreground text-xs font-mono">{sub.providerId.substring(0, 10)}...</div>}
-                </td>
-                <td className="px-6 py-4 text-muted-foreground">
-                  {sub.currentPeriodEnd ? sub.currentPeriodEnd.toLocaleDateString() : "Never"}
-                </td>
-              </tr>
-            ))}
-            {subscriptions.length === 0 && (
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="font-medium">{plan?.name || "Free"}</div>
+                    <div className="text-muted-foreground text-xs">${plan?.price || 0} {plan?.currency || "USD"}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
+                      activeSub ? 'bg-green-500/10 text-green-600' : 'bg-blue-500/10 text-blue-600'
+                    }`}>
+                      <CheckCircle2 className="w-3 h-3" />
+                      {activeSub ? 'ACTIVE' : 'DEFAULT'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-muted-foreground">
+                    {activeSub?.currentPeriodEnd ? activeSub.currentPeriodEnd.toLocaleDateString() : "Never"}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <ChangePlanDialog 
+                      userId={user.id} 
+                      userName={user.name} 
+                      currentPlanId={plan?.id} 
+                      plans={allPlans} 
+                    />
+                  </td>
+                </tr>
+              );
+            })}
+            {users.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
                   <div className="flex flex-col items-center justify-center">
-                    <CreditCard className="w-10 h-10 mb-4 opacity-50" />
-                    <p>No subscriptions found.</p>
+                    <UserIcon className="w-10 h-10 mb-4 opacity-50" />
+                    <p>No users found.</p>
                   </div>
                 </td>
               </tr>
@@ -120,14 +128,14 @@ export default async function AdminSubscriptionsPage({
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            Showing {skip + 1} to {Math.min(skip + limit, total)} of {total} subscriptions
+            Showing {skip + 1} to {Math.min(skip + limit, total)} of {total} users
           </div>
           <div className="flex items-center gap-2">
             {currentPage > 1 && (
-              <a href={`?page=${currentPage - 1}${query ? '&query='+query : ''}${status ? '&status='+status : ''}`} className="px-3 py-1 border rounded hover:bg-muted text-sm">Previous</a>
+              <a href={`?page=${currentPage - 1}${query ? '&query='+query : ''}`} className="px-3 py-1 border rounded hover:bg-muted text-sm">Previous</a>
             )}
             {currentPage < totalPages && (
-              <a href={`?page=${currentPage + 1}${query ? '&query='+query : ''}${status ? '&status='+status : ''}`} className="px-3 py-1 border rounded hover:bg-muted text-sm">Next</a>
+              <a href={`?page=${currentPage + 1}${query ? '&query='+query : ''}`} className="px-3 py-1 border rounded hover:bg-muted text-sm">Next</a>
             )}
           </div>
         </div>

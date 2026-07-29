@@ -71,6 +71,30 @@ export default async function ImagePage({ params }: Props) {
   const html = `<img src="${directUrl}" alt="${image.originalName}" />`;
   const bbcode = `[img]${directUrl}[/img]`;
 
+  // Track View (Server-side)
+  const userAgent = headersList.get("user-agent") || "";
+  const isBot = /bot|crawler|spider|crawling|whatsapp|telegram|slack|discord/i.test(userAgent);
+  
+  if (!isBot) {
+    try {
+      await prisma.analyticsEvent.create({
+        data: {
+          uploadId: image.id,
+          userId: image.userId, // owner of the image
+          eventType: "VIEW",
+          bandwidth: image.size,
+          browser: userAgent.substring(0, 50),
+          country: "Unknown", // Can be extended if you have a GeoIP proxy header like x-vercel-ip-country
+          referrer: headersList.get("referer") || "Direct"
+        }
+      });
+    } catch (e) {
+      console.error("Failed to log view", e);
+    }
+  }
+
+  const downloadTrackingUrl = `/api/images/${image.id}/download`;
+
   return (
     <div className="min-h-screen bg-muted/20 pb-20">
       <header className="border-b border-border/40 bg-background/80 backdrop-blur-md sticky top-0 z-50">
@@ -85,7 +109,7 @@ export default async function ImagePage({ params }: Props) {
                 <ExternalLink className="w-4 h-4 mr-2 hidden sm:block" />
                 Open
               </a>
-              <a href={relativeUrl} download className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all bg-primary text-primary-foreground shadow-sm shadow-primary/20 hover:bg-primary/90 hover:scale-105 active:scale-95 h-9 px-4 py-2">
+              <a href={downloadTrackingUrl} download className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all bg-primary text-primary-foreground shadow-sm shadow-primary/20 hover:bg-primary/90 hover:scale-105 active:scale-95 h-9 px-4 py-2">
                 <Download className="w-4 h-4 mr-2 hidden sm:block" />
                 Download
               </a>
