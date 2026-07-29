@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { z } from "zod";
+import { logger } from "@/lib/logger";
+
+const authSchema = z.object({
+  password: z.string().min(1)
+});
 
 export async function POST(
   request: Request,
@@ -8,7 +14,8 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { password } = await request.json();
+    const body = await request.json();
+    const { password } = authSchema.parse(body);
 
     const collection = await prisma.folder.findUnique({
       where: { id }
@@ -22,10 +29,6 @@ export async function POST(
       return NextResponse.json({ success: true });
     }
 
-    if (!password || typeof password !== "string") {
-      return NextResponse.json({ error: "Invalid password format" }, { status: 400 });
-    }
-
     const isValid = await bcrypt.compare(password, collection.password);
     
     if (!isValid) {
@@ -37,7 +40,10 @@ export async function POST(
     return NextResponse.json({ success: true, token: "authorized" });
 
   } catch (error) {
-    console.error("Auth error:", error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: "Invalid password format" }, { status: 400 });
+    }
+    logger.error("Auth error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

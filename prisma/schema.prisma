@@ -127,6 +127,10 @@ model Upload {
   
   shareLinks   ShareLink[]
   analytics    AnalyticsEvent[]
+
+  @@index([userId])
+  @@index([folderId])
+  @@index([createdAt])
 }
 
 model Folder {
@@ -146,6 +150,7 @@ model Folder {
   updatedAt DateTime @updatedAt
   
   @@unique([name, userId])
+  @@index([userId])
 }
 
 model ApiKey {
@@ -157,6 +162,8 @@ model ApiKey {
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model ShareLink {
@@ -170,6 +177,8 @@ model ShareLink {
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([uploadId])
 }
 
 model AnalyticsEvent {
@@ -224,7 +233,7 @@ model Plan {
   
   // Feature flags (JSON string array)
   features           String   @default("[]") 
-
+  
   subscriptions      Subscription[]
 
   createdAt          DateTime @default(now())
@@ -252,6 +261,9 @@ model Subscription {
 
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+
+  @@index([userId])
+  @@index([planId])
 }
 
 model Invoice {
@@ -269,6 +281,9 @@ model Invoice {
   
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+
+  @@index([userId])
+  @@index([subscriptionId])
 }
 
 model SystemSetting {
@@ -282,7 +297,6 @@ model SystemSetting {
   updatedAt        DateTime @updatedAt
 }
 
-
 model AuditLog {
   id               String   @id @default(uuid())
   userId           String?
@@ -294,5 +308,8 @@ model AuditLog {
   ipAddress        String?
   
   createdAt        DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
 }
 

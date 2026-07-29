@@ -1,108 +1,89 @@
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { withAuth, AuthenticatedUser } from "@/lib/api-utils";
+import { z } from "zod";
+import { logger } from "@/lib/logger";
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers()
-    });
+const patchSchema = z.object({
+  name: z.string().optional(),
+  isFavorite: z.boolean().optional(),
+  isPinned: z.boolean().optional(),
+  folderId: z.string().nullable().optional(),
+  visibility: z.enum(["PRIVATE", "PUBLIC", "PASSWORD_PROTECTED"]).optional(),
+  expiresAt: z.string().nullable().optional(),
+  maxDownloads: z.number().nullable().optional(),
+  password: z.string().nullable().optional()
+});
 
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export const PATCH = withAuth(async (request: Request, user: AuthenticatedUser, params: { id: string }) => {
+  const { id } = await params;
+  const body = await request.json();
+  const validated = patchSchema.parse(body);
+  
+  const updateData: any = {};
+  if (validated.name !== undefined) updateData.originalName = validated.name;
+  if (validated.isFavorite !== undefined) updateData.isFavorite = validated.isFavorite;
+  if (validated.isPinned !== undefined) updateData.isPinned = validated.isPinned;
+  if (validated.folderId !== undefined) updateData.folderId = validated.folderId === "null" ? null : validated.folderId;
+  if (validated.visibility !== undefined) updateData.visibility = validated.visibility;
+  if (validated.expiresAt !== undefined) updateData.expiresAt = validated.expiresAt;
+  if (validated.maxDownloads !== undefined) updateData.maxDownloads = validated.maxDownloads;
+  
+  if (validated.password !== undefined) {
+    if (validated.password === null || validated.password === "") {
+      updateData.password = null;
+    } else {
+      updateData.password = await bcrypt.hash(validated.password, 10);
     }
-
-    const { id } = await params;
-    const body = await request.json();
-    
-    const updateData: any = {};
-    if (body.name !== undefined) updateData.originalName = body.name;
-    if (body.isFavorite !== undefined) updateData.isFavorite = body.isFavorite;
-    if (body.isPinned !== undefined) updateData.isPinned = body.isPinned;
-    if (body.folderId !== undefined) updateData.folderId = body.folderId === "null" ? null : body.folderId;
-    if (body.visibility !== undefined) updateData.visibility = body.visibility;
-    if (body.expiresAt !== undefined) updateData.expiresAt = body.expiresAt;
-    if (body.maxDownloads !== undefined) updateData.maxDownloads = body.maxDownloads;
-    
-    if (body.password !== undefined) {
-      if (body.password === null || body.password === "") {
-        updateData.password = null;
-      } else {
-        updateData.password = await bcrypt.hash(body.password, 10);
-      }
-    }
-
-    const updated = await prisma.upload.update({
-      where: { 
-        id,
-        userId: session.user.id // Ensure they own it
-      },
-      data: updateData
-    });
-
-    return NextResponse.json(updated);
-  } catch (error) {
-    console.error("Error updating image:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
-}
 
-export async function DELETE(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers()
-    });
+  const updated = await prisma.upload.update({
+    where: { 
+      id,
+      userId: user.id // Ensure they own it
+    },
+    data: updateData
+  });
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  return NextResponse.json(updated);
+});
+
+export const DELETE = withAuth(async (req: Request, user: AuthenticatedUser, params: { id: string }) => {
+  const { id } = await params;
+
+  const image = await prisma.upload.findFirst({
+    where: {
+      id,
+      userId: user.id
     }
+  });
 
-    const { id } = await params;
-
-    const image = await prisma.upload.findFirst({
-      where: {
-        id,
-        userId: session.user.id
-      }
-    });
-
-    if (!image) {
-      return NextResponse.json({ error: "Image not found or unauthorized" }, { status: 404 });
-    }
-
-    const { deleteFromS3 } = await import("@/lib/s3");
-    let bucket = process.env.S3_BUCKET_IMAGES || "images";
-    let thumbBucket = process.env.S3_BUCKET_THUMBNAILS || "thumbnails";
-    let key = image.filename || image.url.split('/').pop() || "";
-    
-    if (key) {
-      try {
-        await deleteFromS3(bucket, key);
-        if (image.mimeType !== "image/svg+xml") {
-          await deleteFromS3(thumbBucket, `${image.id}-large.webp`).catch(e => console.error("Thumb delete error:", e));
-          await deleteFromS3(thumbBucket, `${image.id}-medium.webp`).catch(e => console.error("Thumb delete error:", e));
-          await deleteFromS3(thumbBucket, `${image.id}-small.webp`).catch(e => console.error("Thumb delete error:", e));
-        }
-      } catch (s3Error) {
-        console.error("Failed to delete from S3, continuing with DB deletion:", s3Error);
-      }
-    }
-
-    await prisma.upload.delete({
-      where: { id }
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Delete error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  if (!image) {
+    return NextResponse.json({ error: "Image not found or unauthorized" }, { status: 404 });
   }
-}
+
+  const { deleteFromS3 } = await import("@/lib/s3");
+  let bucket = process.env.S3_BUCKET_IMAGES || "images";
+  let thumbBucket = process.env.S3_BUCKET_THUMBNAILS || "thumbnails";
+  let key = image.filename || image.url.split('/').pop() || "";
+  
+  if (key) {
+    try {
+      await deleteFromS3(bucket, key);
+      if (image.mimeType !== "image/svg+xml") {
+        await deleteFromS3(thumbBucket, `${image.id}-large.webp`).catch(e => logger.error("Thumb delete error:", e));
+        await deleteFromS3(thumbBucket, `${image.id}-medium.webp`).catch(e => logger.error("Thumb delete error:", e));
+        await deleteFromS3(thumbBucket, `${image.id}-small.webp`).catch(e => logger.error("Thumb delete error:", e));
+      }
+    } catch (s3Error) {
+      logger.error("Failed to delete from S3, continuing with DB deletion:", s3Error);
+    }
+  }
+
+  await prisma.upload.delete({
+    where: { id }
+  });
+
+  return NextResponse.json({ success: true });
+});

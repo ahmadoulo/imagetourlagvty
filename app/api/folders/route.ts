@@ -1,59 +1,48 @@
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { withAuth, AuthenticatedUser } from "@/lib/api-utils";
+import { z } from "zod";
 
-export async function GET(request: Request) {
+export const GET = withAuth(async (request: Request, user: AuthenticatedUser) => {
+  const folders = await prisma.folder.findMany({
+    where: { userId: user.id },
+    orderBy: { name: 'asc' },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      userId: true,
+      visibility: true,
+      expiresAt: true,
+      createdAt: true,
+      updatedAt: true,
+      // exclude password
+    }
+  });
+
+  return NextResponse.json(folders);
+});
+
+const postSchema = z.object({
+  name: z.string().min(1, "Folder name is required").trim()
+});
+
+export const POST = withAuth(async (request: Request, user: AuthenticatedUser) => {
+  const body = await request.json();
+  const { name } = postSchema.parse(body);
+
   try {
-    const session = await auth.api.getSession({
-      headers: await headers()
-    });
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const folders = await prisma.folder.findMany({
-      where: { userId: session.user.id },
-      orderBy: { name: 'asc' }
-    });
-
-    return NextResponse.json(folders);
-  } catch (error) {
-    console.error("Error fetching folders:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-  }
-}
-
-export async function POST(request: Request) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers()
-    });
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { name } = await request.json();
-
-    if (!name || typeof name !== "string") {
-      return NextResponse.json({ error: "Invalid folder name" }, { status: 400 });
-    }
-
     const folder = await prisma.folder.create({
       data: {
-        name: name.trim(),
-        userId: session.user.id
+        name,
+        userId: user.id
       }
     });
-
     return NextResponse.json(folder);
   } catch (error: any) {
-    console.error("Error creating folder:", error);
     if (error.code === 'P2002') {
       return NextResponse.json({ error: "A folder with this name already exists" }, { status: 400 });
     }
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    throw error;
   }
-}
+});

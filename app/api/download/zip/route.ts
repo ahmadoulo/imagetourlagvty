@@ -2,12 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { s3Client } from "@/lib/s3";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { logger } from "@/lib/logger";
+import { auth } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
     const { imageIds, collectionId, password } = await req.json();
 
     let uploadsToZip: any[] = [];
+    
+    // Auth context (might be null for guests)
+    const session = await auth.api.getSession({ headers: req.headers });
+    const userId = session?.user?.id;
 
     // Option A: Download by Collection ID
     if (collectionId) {
@@ -19,7 +25,7 @@ export async function POST(req: NextRequest) {
       if (!collection) return NextResponse.json({ error: "Collection not found" }, { status: 404 });
       
       // Basic access check
-      if (collection.visibility === "PRIVATE") {
+      if (collection.visibility === "PRIVATE" && collection.userId !== userId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
       }
 
@@ -30,15 +36,21 @@ export async function POST(req: NextRequest) {
 
       uploadsToZip = collection.uploads;
     } 
-    // Option B: Download specific images
+    // Option B: Download specific images (Must be authenticated and own the images)
     else if (imageIds && Array.isArray(imageIds)) {
+      if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
       uploadsToZip = await prisma.upload.findMany({
-        where: { id: { in: imageIds } }
+        where: { 
+          id: { in: imageIds },
+          userId: userId // Authorization check: Must own the files!
+        }
       });
     }
 
     if (uploadsToZip.length === 0) {
-      return NextResponse.json({ error: "No images found" }, { status: 404 });
+      return NextResponse.json({ error: "No images found or unauthorized" }, { status: 404 });
     }
 
     if (uploadsToZip.length > 50) {
@@ -58,7 +70,7 @@ export async function POST(req: NextRequest) {
     archive.on('data', (chunk: any) => writer.write(chunk));
     archive.on('end', () => writer.close());
     archive.on('error', (err: any) => {
-      console.error("Archive error:", err);
+      logger.error("Archive error:", err);
       writer.abort(err);
     });
 
@@ -96,7 +108,7 @@ export async function POST(req: NextRequest) {
             });
           }
         } catch (e) {
-          console.error(`Failed to fetch ${upload.filename} from S3`, e);
+          logger.error(`Failed to fetch ${upload.filename} from S3`, e);
         }
       }
       archive.finalize();
@@ -109,7 +121,7 @@ export async function POST(req: NextRequest) {
     return new NextResponse(stream.readable, { headers });
 
   } catch (error) {
-    console.error("Error creating zip:", error);
+    logger.error("Error creating zip:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

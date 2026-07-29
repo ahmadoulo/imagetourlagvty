@@ -1,47 +1,36 @@
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { withAuth, AuthenticatedUser } from "@/lib/api-utils";
+import { z } from "zod";
 
-export async function POST(request: Request) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers()
+const bulkMoveSchema = z.object({
+  ids: z.array(z.string()).min(1),
+  folderId: z.string().nullable().optional()
+});
+
+export const POST = withAuth(async (request: Request, user: AuthenticatedUser) => {
+  const body = await request.json();
+  const { ids, folderId } = bulkMoveSchema.parse(body);
+
+  // Verify folder ownership if folderId is provided
+  if (folderId) {
+    const folder = await prisma.folder.findUnique({
+      where: { id: folderId, userId: user.id }
     });
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!folder) {
+      return NextResponse.json({ error: "Folder not found" }, { status: 404 });
     }
-
-    const { ids, folderId } = await request.json();
-    
-    if (!Array.isArray(ids) || ids.length === 0) {
-      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
-    }
-
-    // Verify folder ownership if folderId is provided
-    if (folderId) {
-      const folder = await prisma.folder.findUnique({
-        where: { id: folderId, userId: session.user.id }
-      });
-      if (!folder) {
-        return NextResponse.json({ error: "Folder not found" }, { status: 404 });
-      }
-    }
-
-    const result = await prisma.upload.updateMany({
-      where: {
-        id: { in: ids },
-        userId: session.user.id
-      },
-      data: {
-        folderId: folderId || null
-      }
-    });
-
-    return NextResponse.json({ success: true, count: result.count });
-  } catch (error) {
-    console.error("Error in bulk move:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
-}
+
+  const result = await prisma.upload.updateMany({
+    where: {
+      id: { in: ids },
+      userId: user.id
+    },
+    data: {
+      folderId: folderId || null
+    }
+  });
+
+  return NextResponse.json({ success: true, count: result.count });
+});

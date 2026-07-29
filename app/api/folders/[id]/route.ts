@@ -1,119 +1,81 @@
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { withAuth, AuthenticatedUser } from "@/lib/api-utils";
+import { z } from "zod";
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers()
-    });
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export const GET = withAuth(async (request: Request, user: AuthenticatedUser, params: { id: string }) => {
+  const { id } = await params;
+  
+  const folder = await prisma.folder.findUnique({
+    where: { 
+      id,
+      userId: user.id
+    },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      visibility: true,
+      expiresAt: true,
+      password: true
     }
+  });
+  
+  if (!folder) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    const { id } = await params;
-    const folder = await prisma.folder.findUnique({
-      where: { 
-        id,
-        userId: session.user.id
-      },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        visibility: true,
-        expiresAt: true,
-        // we intentionally omit password hash, but we can return boolean hasPassword
-      }
-    });
-    
-    if (!folder) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const hasPassword = !!folder.password;
+  const { password, ...folderData } = folder;
 
-    // Let's also figure out if it has a password by querying again or just checking if password exists
-    const fullFolder = await prisma.folder.findUnique({ where: { id }});
-    const hasPassword = !!fullFolder?.password;
+  return NextResponse.json({ ...folderData, hasPassword });
+});
 
-    return NextResponse.json({ ...folder, hasPassword });
-  } catch (error) {
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+const patchSchema = z.object({
+  name: z.string().optional(),
+  description: z.string().nullable().optional(),
+  visibility: z.enum(["PRIVATE", "PUBLIC", "PASSWORD_PROTECTED"]).optional(),
+  expiresAt: z.string().nullable().optional(),
+  password: z.string().nullable().optional()
+});
+
+export const PATCH = withAuth(async (request: Request, user: AuthenticatedUser, params: { id: string }) => {
+  const { id } = await params;
+  const body = await request.json();
+  const validated = patchSchema.parse(body);
+  
+  const updateData: any = {};
+  if (validated.name !== undefined) updateData.name = validated.name;
+  if (validated.description !== undefined) updateData.description = validated.description;
+  if (validated.visibility !== undefined) updateData.visibility = validated.visibility;
+  if (validated.expiresAt !== undefined) updateData.expiresAt = validated.expiresAt;
+  
+  if (validated.password !== undefined) {
+    if (validated.password === null || validated.password === "") {
+      updateData.password = null;
+    } else {
+      updateData.password = await bcrypt.hash(validated.password, 10);
+    }
   }
-}
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers()
-    });
+  const updated = await prisma.folder.update({
+    where: { 
+      id,
+      userId: user.id
+    },
+    data: updateData
+  });
 
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  return NextResponse.json(updated);
+});
+
+export const DELETE = withAuth(async (request: Request, user: AuthenticatedUser, params: { id: string }) => {
+  const { id } = await params;
+  await prisma.folder.delete({
+    where: { 
+      id,
+      userId: user.id
     }
+  });
 
-    const { id } = await params;
-    const body = await request.json();
-    
-    const updateData: any = {};
-    if (body.name !== undefined) updateData.name = body.name;
-    if (body.description !== undefined) updateData.description = body.description;
-    if (body.visibility !== undefined) updateData.visibility = body.visibility;
-    if (body.expiresAt !== undefined) updateData.expiresAt = body.expiresAt;
-    
-    if (body.password !== undefined) {
-      if (body.password === null || body.password === "") {
-        updateData.password = null;
-      } else {
-        updateData.password = await bcrypt.hash(body.password, 10);
-      }
-    }
-
-    const updated = await prisma.folder.update({
-      where: { 
-        id,
-        userId: session.user.id
-      },
-      data: updateData
-    });
-
-    return NextResponse.json(updated);
-  } catch (error) {
-    console.error("Error updating folder:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-  }
-}
-
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers()
-    });
-
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { id } = await params;
-    await prisma.folder.delete({
-      where: { 
-        id,
-        userId: session.user.id
-      }
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error deleting folder:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-  }
-}
+  return NextResponse.json({ success: true });
+});
