@@ -44,21 +44,16 @@ export async function POST(req: NextRequest) {
     // Fetch Plan Limits
     let plan = null;
     if (userId) {
-      const activeSub = await prisma.subscription.findFirst({
-        where: { userId, status: "ACTIVE" },
-        include: { plan: true },
-        orderBy: { createdAt: "desc" }
-      });
+      const { ensureDefaultSubscription } = await import("@/lib/subscription");
+      const activeSub = await ensureDefaultSubscription(userId);
       plan = activeSub?.plan;
     }
-    if (!plan) {
-      plan = await prisma.plan.findFirst({ where: { name: "Free" } });
-    }
     
-    // Default fallback limits if no plan exists at all in DB
+    // Default fallback limits if no plan exists (e.g. Guests)
     const maxFileSizeMB = plan?.maxFileSizeMB ?? 10;
     const maxStorageMB = plan?.maxStorageMB ?? 1024;
     const maxUploadsPerMonth = plan?.maxUploadsPerMonth ?? 0;
+    const retentionDays = plan?.retentionDays ?? 30; // Guests default to 30 days retention
 
     // Validate File Size
     if (maxFileSizeMB > 0 && file.size > maxFileSizeMB * 1024 * 1024) {
@@ -165,7 +160,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 8. Save to Database
+    // 8. Calculate Retention
+    let expiresAt = null;
+    let retentionPolicy = "UNLIMITED";
+    if (retentionDays > 0) {
+      expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + retentionDays);
+      retentionPolicy = `${retentionDays}_DAYS`;
+    }
+
+    // 9. Save to Database
     const uploadRecord = await prisma.upload.create({
       data: {
         id,
@@ -179,6 +183,9 @@ export async function POST(req: NextRequest) {
         url: publicUrl,
         width,
         height,
+        expiresAt,
+        retentionPolicy,
+        status: "ACTIVE"
       }
     });
 

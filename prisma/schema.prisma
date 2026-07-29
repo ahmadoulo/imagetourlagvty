@@ -118,7 +118,12 @@ model Upload {
   password     String?
   isFavorite   Boolean   @default(false)
   isPinned     Boolean   @default(false)
+  
+  // Retention & Lifecycle
   expiresAt    DateTime?
+  retentionPolicy String @default("UNLIMITED") // e.g., "30_DAYS", "UNLIMITED"
+  status       String   @default("ACTIVE") // ACTIVE, EXPIRED, DELETED
+  
   downloads    Int       @default(0)
   maxDownloads Int?
   
@@ -230,6 +235,7 @@ model Plan {
   maxUploadsPerMonth Int      @default(0)
   maxFolders         Int      @default(0)
   maxApiKeys         Int      @default(0)
+  retentionDays      Int      @default(30) // 0 for unlimited, 30 for 30 days
   
   // Feature flags (JSON string array)
   features           String   @default("[]") 

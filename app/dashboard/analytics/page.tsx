@@ -164,41 +164,42 @@ export default function AnalyticsDashboard() {
       {data && (
         <div id="analytics-dashboard-content" className="space-y-6">
           {/* Top KPIs */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-background rounded-xl border border-border/60 p-6 shadow-sm">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center">
-                  <Eye className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Views</p>
-                  <h3 className="text-3xl font-bold">{data.totals.views.toLocaleString()}</h3>
-                </div>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+            <div className="bg-background rounded-xl border border-border/60 p-4 shadow-sm">
+              <p className="text-xs font-medium text-muted-foreground">Total Views</p>
+              <h3 className="text-2xl font-bold">{data.totals.views.toLocaleString()}</h3>
             </div>
             
-            <div className="bg-background rounded-xl border border-border/60 p-6 shadow-sm">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center">
-                  <DownloadCloud className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Downloads</p>
-                  <h3 className="text-3xl font-bold">{data.totals.downloads.toLocaleString()}</h3>
-                </div>
-              </div>
+            <div className="bg-background rounded-xl border border-border/60 p-4 shadow-sm">
+              <p className="text-xs font-medium text-muted-foreground">Total Downloads</p>
+              <h3 className="text-2xl font-bold">{data.totals.downloads.toLocaleString()}</h3>
             </div>
 
-            <div className="bg-background rounded-xl border border-border/60 p-6 shadow-sm">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-purple-500/10 text-purple-500 rounded-full flex items-center justify-center">
-                  <HardDrive className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Bandwidth Used</p>
-                  <h3 className="text-3xl font-bold">{formatBytes(data.totals.bandwidth)}</h3>
-                </div>
-              </div>
+            <div className="bg-background rounded-xl border border-border/60 p-4 shadow-sm">
+              <p className="text-xs font-medium text-muted-foreground">Total Uploads</p>
+              <h3 className="text-2xl font-bold">{data.totals.uploads.toLocaleString()}</h3>
+              <p className="text-[10px] text-muted-foreground mt-1">+{data.totals.uploadsThisMonth} this month</p>
+            </div>
+
+            <div className="bg-background rounded-xl border border-border/60 p-4 shadow-sm">
+              <p className="text-xs font-medium text-muted-foreground">Storage Used</p>
+              <h3 className="text-2xl font-bold">{formatBytes(data.totals.storageUsed)}</h3>
+              {data.totals.maxStorage > 0 && (
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  {formatBytes(data.totals.storageRemaining)} left
+                </p>
+              )}
+            </div>
+            
+            <div className="bg-background rounded-xl border border-border/60 p-4 shadow-sm">
+              <p className="text-xs font-medium text-muted-foreground">Bandwidth Used</p>
+              <h3 className="text-2xl font-bold">{formatBytes(data.totals.bandwidth)}</h3>
+            </div>
+
+            <div className="bg-background rounded-xl border border-border/60 p-4 shadow-sm">
+              <p className="text-xs font-medium text-muted-foreground">Expiring Soon</p>
+              <h3 className="text-2xl font-bold text-orange-500">{data.totals.expiringImages.toLocaleString()}</h3>
+              <p className="text-[10px] text-muted-foreground mt-1">Images to be deleted</p>
             </div>
           </div>
 

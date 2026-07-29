@@ -33,31 +33,44 @@ export async function GET(request: Request) {
     const s3Bucket = process.env.S3_BUCKET_IMAGES || "images";
     const thumbBucket = process.env.S3_BUCKET_THUMBNAILS || "thumbnails";
 
-    // Delete from S3
-    await Promise.all(
-      expiredUploads.map(async (upload) => {
-        try {
-          await deleteFromS3(s3Bucket, upload.filename);
-          if (upload.mimeType !== "image/svg+xml") {
-            await deleteFromS3(thumbBucket, `${upload.id}-large.webp`);
-            await deleteFromS3(thumbBucket, `${upload.id}-medium.webp`);
-            await deleteFromS3(thumbBucket, `${upload.id}-small.webp`);
-          }
-        } catch (s3Error) {
-          logger.error(`Failed to delete S3 objects for expired upload ${upload.id}`, s3Error);
+    let deletedCount = 0;
+    let failedCount = 0;
+
+    for (const upload of expiredUploads) {
+      try {
+        await deleteFromS3(s3Bucket, upload.filename);
+        if (upload.mimeType !== "image/svg+xml") {
+          await deleteFromS3(thumbBucket, `${upload.id}-large.webp`);
+          await deleteFromS3(thumbBucket, `${upload.id}-medium.webp`);
+          await deleteFromS3(thumbBucket, `${upload.id}-small.webp`);
         }
-      })
-    );
+        
+        // Delete from DB (cascade will handle share links and analytics)
+        await prisma.upload.delete({
+          where: { id: upload.id }
+        });
 
-    // Delete from DB
-    const deleteResult = await prisma.upload.deleteMany({
-      where: {
-        id: { in: expiredUploads.map(u => u.id) }
+        // Audit Log
+        if (upload.userId) {
+          await prisma.auditLog.create({
+            data: {
+              userId: upload.userId,
+              action: "AUTO_DELETE_EXPIRED",
+              targetId: upload.id,
+              targetType: "UPLOAD",
+              metadata: JSON.stringify({ filename: upload.originalName, expiresAt: upload.expiresAt }),
+            }
+          });
+        }
+        deletedCount++;
+      } catch (err) {
+        logger.error(`Failed to completely clean up upload ${upload.id}`, err);
+        failedCount++;
       }
-    });
+    }
 
-    logger.info(`Cron cleanup: deleted ${deleteResult.count} expired images`);
-    return NextResponse.json({ success: true, count: deleteResult.count });
+    logger.info(`Cron cleanup: deleted ${deletedCount}, failed ${failedCount}`);
+    return NextResponse.json({ success: true, count: deletedCount, failed: failedCount });
 
   } catch (error) {
     logger.error("Error in cron cleanup", error);

@@ -46,8 +46,9 @@ async function main() {
       maxStorageMB: 1024,
       maxBandwidthMB: 10240,
       maxFileSizeMB: 10,
-      maxUploadsPerDay: 50,
+      maxUploadsPerDay: 20,
       maxFolders: 3,
+      retentionDays: 30, // 30 days retention for Free plan
       features: '["basic_support"]',
       isRecommended: false,
       order: 1
@@ -63,6 +64,7 @@ async function main() {
       maxFileSizeMB: 50,
       maxUploadsPerDay: 0, // unlimited
       maxFolders: 0, // unlimited
+      retentionDays: 0, // unlimited retention for Pro plan
       features: '["priority_support", "custom_domains", "api_access"]',
       isRecommended: true,
       order: 2

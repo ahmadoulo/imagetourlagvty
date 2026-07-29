@@ -393,10 +393,17 @@ export function AssetManager() {
                     <Link href={`/image/${img.id}`} className="font-medium text-sm truncate hover:text-primary transition-colors block" title={img.originalName}>
                       {img.originalName}
                     </Link>
-                    <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                      <span className="font-mono bg-muted px-1 rounded">{(img.size / 1024).toFixed(0)} KB</span>
-                      <span>•</span>
-                      <span>{new Date(img.createdAt).toLocaleDateString()}</span>
+                    <div className="flex flex-col gap-1 mt-1">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span className="font-mono bg-muted px-1 rounded">{(img.size / 1024).toFixed(0)} KB</span>
+                        <span>•</span>
+                        <span>{new Date(img.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      {img.expiresAt && (
+                        <div className="flex items-center gap-1 text-[10px] text-destructive/90 font-medium">
+                          <span>Expires: {new Date(img.expiresAt).toLocaleDateString()}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

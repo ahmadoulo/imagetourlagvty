@@ -3,7 +3,23 @@ import { LineChart, BarChart2, Eye, Download } from "lucide-react";
 import { formatBytes } from "@/lib/utils";
 
 export default async function AdminAnalyticsPage() {
-  const [totalViews, totalDownloads, topUsers, topBrowsers, topCountries] = await Promise.all([
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  
+  const startOfWeek = new Date();
+  startOfWeek.setDate(startOfWeek.getDate() - 7);
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+
+  const [
+    totalViews, totalDownloads, topUsers, topBrowsers, topCountries,
+    totalUsers, newUsersToday, newUsersWeek, newUsersMonth,
+    totalImages, imagesToday, imagesWeek, imagesMonth,
+    storageAgg, expiredImages
+  ] = await Promise.all([
     prisma.analyticsEvent.count({ where: { eventType: "VIEW" } }),
     prisma.analyticsEvent.count({ where: { eventType: "DOWNLOAD" } }),
     prisma.user.findMany({
@@ -22,8 +38,20 @@ export default async function AdminAnalyticsPage() {
       _count: { _all: true },
       orderBy: { _count: { country: 'desc' } },
       take: 5
-    })
+    }),
+    prisma.user.count(),
+    prisma.user.count({ where: { createdAt: { gte: startOfToday } } }),
+    prisma.user.count({ where: { createdAt: { gte: startOfWeek } } }),
+    prisma.user.count({ where: { createdAt: { gte: startOfMonth } } }),
+    prisma.upload.count(),
+    prisma.upload.count({ where: { createdAt: { gte: startOfToday } } }),
+    prisma.upload.count({ where: { createdAt: { gte: startOfWeek } } }),
+    prisma.upload.count({ where: { createdAt: { gte: startOfMonth } } }),
+    prisma.upload.aggregate({ _sum: { size: true } }),
+    prisma.upload.count({ where: { expiresAt: { not: null } } })
   ]);
+  
+  const totalStorageUsed = storageAgg._sum.size || 0;
 
   return (
     <div className="p-8 space-y-6 max-w-7xl mx-auto">
@@ -32,25 +60,36 @@ export default async function AdminAnalyticsPage() {
         <p className="text-muted-foreground mt-1">Platform-wide usage and growth metrics.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-background rounded-xl border border-border/60 p-6 shadow-sm flex items-center gap-4">
-          <div className="p-4 bg-blue-500/10 text-blue-500 rounded-xl">
-            <Eye className="w-8 h-8" />
-          </div>
-          <div>
-            <h3 className="text-muted-foreground font-medium">Total Image Views</h3>
-            <p className="text-4xl font-bold">{totalViews.toLocaleString()}</p>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        <div className="bg-background rounded-xl border border-border/60 p-4 shadow-sm">
+          <p className="text-xs font-medium text-muted-foreground">Total Users</p>
+          <h3 className="text-2xl font-bold">{totalUsers.toLocaleString()}</h3>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            +{newUsersToday} today / +{newUsersMonth} this month
+          </p>
         </div>
 
-        <div className="bg-background rounded-xl border border-border/60 p-6 shadow-sm flex items-center gap-4">
-          <div className="p-4 bg-green-500/10 text-green-500 rounded-xl">
-            <Download className="w-8 h-8" />
-          </div>
-          <div>
-            <h3 className="text-muted-foreground font-medium">Total File Downloads</h3>
-            <p className="text-4xl font-bold">{totalDownloads.toLocaleString()}</p>
-          </div>
+        <div className="bg-background rounded-xl border border-border/60 p-4 shadow-sm">
+          <p className="text-xs font-medium text-muted-foreground">Total Images</p>
+          <h3 className="text-2xl font-bold">{totalImages.toLocaleString()}</h3>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            +{imagesToday} today / +{imagesMonth} this month
+          </p>
+        </div>
+
+        <div className="bg-background rounded-xl border border-border/60 p-4 shadow-sm">
+          <p className="text-xs font-medium text-muted-foreground">Total Storage Used</p>
+          <h3 className="text-2xl font-bold">{formatBytes(totalStorageUsed)}</h3>
+        </div>
+
+        <div className="bg-background rounded-xl border border-border/60 p-4 shadow-sm">
+          <p className="text-xs font-medium text-muted-foreground">Global Image Views</p>
+          <h3 className="text-2xl font-bold">{totalViews.toLocaleString()}</h3>
+        </div>
+
+        <div className="bg-background rounded-xl border border-border/60 p-4 shadow-sm">
+          <p className="text-xs font-medium text-muted-foreground">Global Downloads</p>
+          <h3 className="text-2xl font-bold">{totalDownloads.toLocaleString()}</h3>
         </div>
       </div>
 

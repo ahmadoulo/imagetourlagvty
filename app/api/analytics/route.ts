@@ -33,6 +33,27 @@ export const GET = withAuth(async (request: Request, user: AuthenticatedUser) =>
   });
   const totalBandwidth = bandwidthAgg._sum.bandwidth || 0;
 
+  // Upload metrics
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+
+  const [totalUploads, uploadsToday, uploadsThisMonth, storageAgg, expiringUploadsCount, activeSub] = await Promise.all([
+    prisma.upload.count({ where: { userId } }),
+    prisma.upload.count({ where: { userId, createdAt: { gte: startOfToday } } }),
+    prisma.upload.count({ where: { userId, createdAt: { gte: startOfMonth } } }),
+    prisma.upload.aggregate({ where: { userId }, _sum: { size: true } }),
+    prisma.upload.count({ where: { userId, expiresAt: { not: null } } }),
+    prisma.subscription.findFirst({ where: { userId, status: "ACTIVE" }, include: { plan: true } })
+  ]);
+
+  const storageUsed = storageAgg._sum.size || 0;
+  const maxStorage = activeSub?.plan?.maxStorageMB ? activeSub.plan.maxStorageMB * 1024 * 1024 : 0;
+  const storageRemaining = maxStorage > 0 ? Math.max(0, maxStorage - storageUsed) : null;
+
   // Daily activity
   const recentEvents = await prisma.analyticsEvent.findMany({
     where: { 
@@ -103,7 +124,14 @@ export const GET = withAuth(async (request: Request, user: AuthenticatedUser) =>
     totals: {
       views: totalViews,
       downloads: totalDownloads,
-      bandwidth: totalBandwidth
+      bandwidth: totalBandwidth,
+      uploads: totalUploads,
+      uploadsToday,
+      uploadsThisMonth,
+      storageUsed,
+      storageRemaining,
+      maxStorage,
+      expiringImages: expiringUploadsCount
     },
     chartData: Object.entries(dailyActivity).map(([date, data]) => ({ date, ...data })),
     topCountries: formatTopList(countries),
