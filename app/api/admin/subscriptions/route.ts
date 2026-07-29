@@ -3,8 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { withAuth } from "@/lib/api-utils";
 import { Role } from "@prisma/client";
 
-export const PATCH = withAuth(async ({ req, session }) => {
-  if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.ADMIN) {
+export const PATCH = withAuth(async (req, user) => {
+  if (user.role !== Role.SUPER_ADMIN && user.role !== Role.ADMIN) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
