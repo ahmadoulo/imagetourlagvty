@@ -19,10 +19,10 @@ export default async function Home() {
       {/* Navbar */}
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-          <div className="flex items-center gap-2 font-bold tracking-tight text-lg">
-            <div className="w-6 h-6 rounded-md bg-primary text-primary-foreground flex items-center justify-center text-xs shadow-sm shadow-primary/20">I</div>
-            ImageToURL
-          </div>
+          <Link href="/" className="flex items-center gap-2 font-bold tracking-tight text-xl hover:opacity-80 transition-opacity">
+            <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center text-sm shadow-sm shadow-primary/20">P</div>
+            Pixora
+          </Link>
           <nav className="flex items-center gap-5 text-sm font-medium">
             <Link href="#features" className="text-muted-foreground hover:text-foreground transition-colors hidden sm:block">Features</Link>
             {session ? (
@@ -125,13 +125,13 @@ export default async function Home() {
       </main>
 
       <footer className="border-t border-border/40 py-12 mt-12">
-        <div className="container mx-auto max-w-5xl px-4 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
+        <div className="container mx-auto px-4 text-center text-muted-foreground flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 font-semibold">
-            <div className="w-4 h-4 rounded bg-primary text-primary-foreground flex items-center justify-center text-[8px]">I</div>
-            ImageToURL
+            <div className="w-5 h-5 rounded bg-primary text-primary-foreground flex items-center justify-center text-[10px]">P</div>
+            Pixora
           </div>
-          <p>© {new Date().getFullYear()} ImageToURL. All rights reserved.</p>
-          <div className="flex gap-4">
+          <p>© {new Date().getFullYear()} Pixora. All rights reserved.</p>
+          <div className="flex items-center gap-4 text-sm">
             <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
             <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
           </div>

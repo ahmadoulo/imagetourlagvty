@@ -4,6 +4,7 @@ import { UserActions } from "./user-actions";
 import { UsersFilter } from "./UsersFilter";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import Link from "next/link";
 
 export default async function AdminUsersPage({
   searchParams,
@@ -55,8 +56,12 @@ export default async function AdminUsersPage({
           <p className="text-muted-foreground mt-1">Manage platform users, roles, and permissions.</p>
         </div>
         
-        {/* Simple search form */}
-        <UsersFilter defaultQuery={query} defaultStatus={status} />
+        <div className="flex items-center gap-4">
+          <UsersFilter defaultQuery={query} defaultStatus={status} />
+          <Link href="/admin/users/new" className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2 shrink-0">
+            Create User
+          </Link>
+        </div>
       </div>
 
       <div className="bg-background border rounded-xl shadow-sm overflow-x-auto">

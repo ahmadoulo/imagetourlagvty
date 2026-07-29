@@ -77,8 +77,8 @@ export default async function CollectionPage({ params }: Props) {
       <header className="border-b bg-background sticky top-0 z-10">
         <div className="container mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-2 font-bold tracking-tight text-lg hover:opacity-80 transition-opacity">
-            <div className="w-6 h-6 rounded-md bg-primary text-primary-foreground flex items-center justify-center text-xs shadow-sm shadow-primary/20">I</div>
-            ImageToURL
+            <div className="w-6 h-6 rounded-md bg-primary text-primary-foreground flex items-center justify-center text-xs shadow-sm shadow-primary/20">P</div>
+            Pixora
           </Link>
           <div className="flex items-center gap-4">
 
@@ -102,10 +102,12 @@ export default async function CollectionPage({ params }: Props) {
         </div>
 
         {collection.uploads.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-             <Grid className="w-12 h-12 text-muted-foreground opacity-50 mb-4" />
-             <h3 className="text-xl font-semibold mb-2">Ce dossier est vide</h3>
-             <p className="text-muted-foreground">Ce dossier ne contient aucune image pour le moment.</p>
+          <div className="flex flex-col items-center justify-center py-24 text-center bg-background border border-border/60 rounded-2xl shadow-sm max-w-2xl mx-auto">
+             <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mb-6 border border-border/50 shadow-inner">
+               <Grid className="w-10 h-10 text-muted-foreground/70" />
+             </div>
+             <h3 className="text-2xl font-bold tracking-tight mb-2">Empty Folder</h3>
+             <p className="text-muted-foreground max-w-sm">This shared folder doesn't contain any files yet.</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 auto-rows-[250px]">

@@ -85,11 +85,16 @@ export async function changeUserRole(formData: FormData) {
 
   // CRITICAL SAFEGUARD: Self-demotion checks
   if (userId === currentUser.id && currentRole === "SUPER_ADMIN") {
+    throw new Error("You cannot remove your own Super Admin role.");
+  }
+
+  // Check if target is a SUPER_ADMIN (other than self, handled above)
+  const targetUser2 = await prisma.user.findUnique({ where: { id: userId } });
+  if (targetUser2?.role === "SUPER_ADMIN") {
     const superAdminCount = await prisma.user.count({ where: { role: "SUPER_ADMIN" } });
     if (superAdminCount <= 1) {
-      throw new Error("You are the only remaining Super Admin. You cannot demote yourself.");
+      throw new Error("Cannot demote the only remaining Super Admin.");
     }
-    // If > 1, the action is allowed (UI handles confirmation dialog)
   }
 
   await prisma.user.update({
@@ -410,4 +415,42 @@ export async function createRole(formData: FormData) {
   redirect("/admin/roles");
 }
 
+export async function assignPlanToUser(formData: FormData) {
+  await requireAdmin();
+  const userId = formData.get("userId") as string;
+  const planId = formData.get("planId") as string;
 
+  if (!userId || !planId) throw new Error("Missing parameters");
+
+  // Verify plan exists
+  const plan = await prisma.plan.findUnique({ where: { id: planId } });
+  if (!plan) throw new Error("Plan not found");
+
+  // Create or update subscription
+  const existingSub = await prisma.subscription.findFirst({
+    where: { userId, status: "ACTIVE" }
+  });
+
+  if (existingSub) {
+    if (existingSub.planId === planId) return; // Already on this plan
+    await prisma.subscription.update({
+      where: { id: existingSub.id },
+      data: {
+        planId,
+        updatedAt: new Date()
+      }
+    });
+  } else {
+    await prisma.subscription.create({
+      data: {
+        userId,
+        planId,
+        status: "ACTIVE",
+        currentPeriodStart: new Date(),
+      }
+    });
+  }
+
+  await logAdminAction("ASSIGN_PLAN", userId, "User", { planName: plan.name });
+  revalidatePath(`/admin/users/${userId}`);
+}

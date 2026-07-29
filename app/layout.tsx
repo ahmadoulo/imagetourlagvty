@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ImageToURL",
-  description: "Upload images. Get permanent URLs instantly.",
+  title: "Pixora",
+  description: "Next generation image hosting and management platform",
 };
 
 export default function RootLayout({

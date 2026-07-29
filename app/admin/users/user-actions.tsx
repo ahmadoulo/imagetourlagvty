@@ -38,14 +38,14 @@ export function UserActions({
   };
 
   const handleChangeRole = () => {
-    if (isCurrentUser && isSuperAdmin) {
-      if (isOnlySuperAdmin) {
-        alert("You are the only remaining Super Admin. You cannot demote yourself.");
-        return;
-      }
-      if (!confirm("WARNING: You are about to remove your own Super Admin privileges. Are you absolutely sure?")) {
-        return;
-      }
+    if (isCurrentUser) {
+      alert("You cannot remove your own role.");
+      return;
+    }
+    
+    if (isOnlySuperAdmin) {
+      alert("Cannot demote the only remaining Super Admin.");
+      return;
     }
     
     startTransition(async () => {
@@ -124,7 +124,7 @@ export function UserActions({
 
       <button
         onClick={handleChangeRole}
-        disabled={isPending || (isCurrentUser && isOnlySuperAdmin)}
+        disabled={isPending || isCurrentUser || isOnlySuperAdmin}
         className="p-2 hover:bg-muted rounded-md transition-colors text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
         title={isSuperAdmin ? "Revoke Super Admin" : user.role === "ADMIN" ? "Revoke Admin" : "Make Admin"}
       >

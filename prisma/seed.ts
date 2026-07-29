@@ -80,7 +80,7 @@ async function main() {
   // 2. Create a Default Super Admin User
   const hashedPassword = await bcrypt.hash('SuperS3cure_2026_xY8p!', 10);
   
-  const adminEmail = 'superadmin@imagetourl.com';
+  const adminEmail = 'superadmin@pixora.app';
   let admin = await prisma.user.findUnique({ where: { email: adminEmail } });
   
   if (!admin) {

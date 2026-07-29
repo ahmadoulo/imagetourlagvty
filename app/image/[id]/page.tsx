@@ -27,13 +27,13 @@ export async function generateMetadata(
 
   if (!image) {
     return {
-      title: "Image Not Found",
+      title: "Not Found - Pixora",
     }
   }
 
   return {
-    title: `${image.originalName} - ImageToURL`,
-    description: `Uploaded to ImageToURL on ${image.createdAt.toLocaleDateString()}`,
+    title: `${image.originalName} - Pixora`,
+    description: `Uploaded to Pixora on ${image.createdAt.toLocaleDateString()}`,
     openGraph: {
       images: [image.url],
     },
@@ -73,11 +73,11 @@ export default async function ImagePage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-muted/20 pb-20">
-      <header className="border-b bg-background sticky top-0 z-10">
-        <div className="container mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
-          <Link href="/" className="flex items-center gap-2 font-bold tracking-tight text-lg hover:opacity-80 transition-opacity">
-            <div className="w-6 h-6 rounded-md bg-primary text-primary-foreground flex items-center justify-center text-xs shadow-sm shadow-primary/20">I</div>
-            ImageToURL
+      <header className="border-b border-border/40 bg-background/80 backdrop-blur-md sticky top-0 z-50">
+        <div className="container mx-auto px-4 h-14 flex items-center justify-between max-w-5xl">
+          <Link href="/" className="flex items-center gap-2 font-bold tracking-tight hover:opacity-80 transition-opacity">
+            <div className="w-6 h-6 rounded-md bg-primary text-primary-foreground flex items-center justify-center text-xs shadow-sm">P</div>
+            Pixora
           </Link>
           <div className="flex items-center gap-4">
             <div className="flex gap-2">

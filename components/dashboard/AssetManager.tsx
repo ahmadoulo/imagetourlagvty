@@ -306,14 +306,30 @@ export function AssetManager() {
               </div>
             </div>
           ) : images.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center max-w-sm mx-auto">
-              <div className="w-20 h-20 bg-muted rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-border/50">
-                <Grid className="w-10 h-10 text-muted-foreground opacity-50" />
+            <div className="flex flex-col items-center justify-center h-full text-center max-w-sm mx-auto animate-in fade-in zoom-in duration-300">
+              <div className="w-20 h-20 bg-muted/50 rounded-2xl flex items-center justify-center mb-6 shadow-inner border border-border/50">
+                <Grid className="w-10 h-10 text-muted-foreground/50" />
               </div>
-              <h3 className="text-xl font-bold mb-2">No assets found</h3>
-              <p className="text-muted-foreground text-sm">
-                Upload some images or try changing your filters and search query.
+              <h3 className="text-2xl font-bold tracking-tight mb-2">
+                {folderId ? "Empty Folder" : filter === "favorites" ? "No Favorites" : filter === "pinned" ? "No Pinned Items" : "No Assets Found"}
+              </h3>
+              <p className="text-muted-foreground text-sm mb-6">
+                {folderId 
+                  ? "This folder doesn't contain any images yet. You can upload new ones or add existing images from your library." 
+                  : filter === "favorites" 
+                    ? "Star your most used images to access them quickly here." 
+                    : filter === "pinned" 
+                      ? "Pin important images to the top for easy access." 
+                      : "Upload some images or try changing your filters and search query."}
               </p>
+              {folderId && (
+                <button 
+                  onClick={() => setFolderId(null)}
+                  className="px-4 py-2 bg-primary text-primary-foreground font-medium rounded-lg text-sm shadow hover:bg-primary/90 transition-colors"
+                >
+                  Browse Existing Images
+                </button>
+              )}
             </div>
           ) : (
             <div className={cn(

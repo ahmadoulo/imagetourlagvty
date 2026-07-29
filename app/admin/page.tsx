@@ -14,7 +14,7 @@ export default async function AdminPage() {
     <div className="p-8 space-y-8 max-w-6xl mx-auto">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Platform Overview</h1>
-        <p className="text-muted-foreground mt-1">Monitor users and storage across ImageToURL.</p>
+        <p className="text-muted-foreground mt-1">Monitor users and storage across Pixora.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

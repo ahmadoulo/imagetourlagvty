@@ -46,12 +46,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA] dark:bg-background px-4">
       <SlideUp className="w-full max-w-[400px]" y={20} duration={0.6}>
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg mb-4 shadow-sm shadow-primary/20">
-            I
-          </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Welcome back</h1>
-          <p className="text-sm text-muted-foreground mt-1">Log in to your ImageToURL account</p>
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold tracking-tight">Welcome Back</h1>
+          <p className="text-sm text-muted-foreground mt-1">Log in to your Pixora account</p>
         </div>
 
         <div className="bg-background border border-border/60 rounded-2xl p-6 shadow-sm shadow-black/5 dark:shadow-none">

@@ -77,12 +77,24 @@ export default function AnalyticsDashboard() {
     if (!element) return;
     try {
       toast.loading("Generating PDF...", { id: "pdf" });
-      const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false });
+      const canvas = await html2canvas(element, { 
+        scale: 2, 
+        useCORS: true, 
+        logging: false,
+        backgroundColor: document.documentElement.classList.contains('dark') ? '#020817' : '#ffffff' 
+      });
       const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      
+      // Calculate dynamic PDF dimensions based on the canvas (in pixels/points)
+      const pdfWidth = canvas.width / 2; // dividing by scale
+      const pdfHeight = canvas.height / 2;
+      
+      const pdf = new jsPDF({
+        orientation: pdfWidth > pdfHeight ? "l" : "p",
+        unit: "pt",
+        format: [pdfWidth, pdfHeight]
+      });
+      
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
       pdf.save(`analytics_${range}days.pdf`);
       toast.success("PDF Exported!", { id: "pdf" });
@@ -200,9 +212,22 @@ export default function AnalyticsDashboard() {
                   <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))", borderRadius: "8px" }}
-                    labelStyle={{ color: "hsl(var(--foreground))", fontWeight: "bold", marginBottom: "4px" }}
-                    itemStyle={{ color: "hsl(var(--foreground))" }}
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-background border border-border p-3 rounded-lg shadow-md">
+                            <p className="font-semibold text-foreground mb-2">{label}</p>
+                            {payload.map((entry, index) => (
+                              <p key={index} className="text-sm flex items-center gap-2" style={{ color: entry.color }}>
+                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                                {entry.name}: <span className="font-medium text-foreground">{entry.value}</span>
+                              </p>
+                            ))}
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
                   />
                   <Line type="monotone" dataKey="views" stroke="#0088FE" strokeWidth={3} dot={false} activeDot={{ r: 6 }} name="Views" />
                   <Line type="monotone" dataKey="downloads" stroke="#00C49F" strokeWidth={3} dot={false} activeDot={{ r: 6 }} name="Downloads" />
@@ -225,8 +250,17 @@ export default function AnalyticsDashboard() {
                         ))}
                       </Pie>
                       <Tooltip 
-                        contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))", borderRadius: "8px" }} 
-                        itemStyle={{ color: "hsl(var(--foreground))" }} 
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className="bg-background border border-border p-3 rounded-lg shadow-md">
+                                <p className="font-semibold text-foreground">{payload[0].name}</p>
+                                <p className="text-sm text-muted-foreground">{payload[0].value} views</p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
                       />
                     </PieChart>
                   </ResponsiveContainer>
@@ -245,10 +279,18 @@ export default function AnalyticsDashboard() {
                       <XAxis type="number" hide />
                       <YAxis dataKey="name" type="category" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                       <Tooltip 
-                        cursor={{ fill: 'hsl(var(--muted)/0.5)' }} 
-                        contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))", borderRadius: "8px" }} 
-                        itemStyle={{ color: "hsl(var(--foreground))" }} 
-                        labelStyle={{ color: "hsl(var(--foreground))" }} 
+                        cursor={{ fill: 'rgba(0,0,0,0.05)' }}
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className="bg-background border border-border p-3 rounded-lg shadow-md">
+                                <p className="font-semibold text-foreground">{payload[0].payload.name}</p>
+                                <p className="text-sm text-muted-foreground">{payload[0].value} views</p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
                       />
                       <Bar dataKey="value" fill="#8884d8" radius={[0, 4, 4, 0]}>
                         {data.topBrowsers.map((entry: any, index: number) => (

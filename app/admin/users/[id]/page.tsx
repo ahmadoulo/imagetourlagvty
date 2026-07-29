@@ -5,6 +5,7 @@ import Link from "next/link";
 import { UserActions } from "../user-actions";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { AssignPlanForm } from "./AssignPlanForm";
 
 export default async function UserDetailsPage({
   params
@@ -58,6 +59,7 @@ export default async function UserDetailsPage({
   const session = await auth.api.getSession({ headers: await headers() });
   const currentUserId = session?.user?.id || "";
   const superAdminCount = await prisma.user.count({ where: { role: "SUPER_ADMIN" } });
+  const plans = await prisma.plan.findMany({ where: { isActive: true }, select: { id: true, name: true } });
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -109,6 +111,11 @@ export default async function UserDetailsPage({
           <div className="text-sm text-muted-foreground">
             {user.subscriptions[0]?.status || "No active subscription"}
           </div>
+          <AssignPlanForm 
+            userId={user.id} 
+            currentPlanId={user.subscriptions[0]?.planId} 
+            plans={plans} 
+          />
         </div>
 
         <div className="bg-background border rounded-xl p-6 shadow-sm">
