@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { withAuth } from "@/lib/api-utils";
-import { Role } from "@prisma/client";
 
 export const PATCH = withAuth(async (req, user) => {
-  if (user.role !== Role.SUPER_ADMIN && user.role !== Role.ADMIN) {
+  if (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
