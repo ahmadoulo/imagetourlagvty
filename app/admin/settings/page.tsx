@@ -5,7 +5,7 @@ import { updateSetting } from "../actions";
 export default async function AdminSettingsPage() {
   const settings = await getSettings();
 
-  const siteTitle = settings["SITE_TITLE"] || "ImageToUrl";
+  const siteTitle = settings["SITE_TITLE"] || "Pixora";
   const allowGuestUploads = settings["ALLOW_GUEST_UPLOADS"] !== false; // default true
   const maxGuestUploadSizeMB = settings["MAX_GUEST_UPLOAD_SIZE_MB"] || "5";
 
