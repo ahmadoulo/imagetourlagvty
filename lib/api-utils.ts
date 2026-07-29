@@ -30,7 +30,7 @@ export function withAuth(handler: RouteHandler) {
     } catch (error) {
       logger.error(`API Error in ${req.method} ${req.url}:`, error);
       if (error instanceof z.ZodError) {
-        return NextResponse.json({ error: "Validation Error", details: error.errors }, { status: 400 });
+        return NextResponse.json({ error: "Validation Error", details: (error as any).errors }, { status: 400 });
       }
       return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
