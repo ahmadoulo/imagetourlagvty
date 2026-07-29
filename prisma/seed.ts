@@ -81,8 +81,12 @@ async function main() {
   const hashedPassword = await bcrypt.hash('SuperS3cure_2026_xY8p!', 10);
   
   const adminEmail = 'superadmin@pixora.app';
-  let admin = await prisma.user.findUnique({ where: { email: adminEmail } });
+  let admin = await prisma.user.findUnique({ where: { id: 'admin_user_1' } });
   
+  if (!admin) {
+    admin = await prisma.user.findUnique({ where: { email: adminEmail } });
+  }
+
   if (!admin) {
     admin = await prisma.user.create({
       data: {
@@ -108,16 +112,36 @@ async function main() {
     });
     console.log(`Created Admin user: ${adminEmail} / SuperS3cure_2026_xY8p!`);
   } else {
-    console.log(`Admin user already exists: ${adminEmail} / SuperS3cure_2026_xY8p!`);
+    console.log(`Admin user already exists: ${admin.email}`);
     
-    // Ensure existing admin is promoted to SUPER_ADMIN
-    if (admin.role !== 'SUPER_ADMIN') {
-      await prisma.user.update({
-        where: { email: adminEmail },
-        data: { role: 'SUPER_ADMIN', status: 'ACTIVE' }
+    // Ensure existing admin is promoted to SUPER_ADMIN and email is updated
+    await prisma.user.update({
+      where: { id: admin.id },
+      data: { role: 'SUPER_ADMIN', status: 'ACTIVE', email: adminEmail }
+    });
+    
+    // Force update password to ensure the user can log in
+    const account = await prisma.account.findFirst({ where: { userId: admin.id, providerId: 'credential' } });
+    if (account) {
+      await prisma.account.update({
+        where: { id: account.id },
+        data: { password: hashedPassword }
       });
-      console.log('Updated existing admin to SUPER_ADMIN role.');
+    } else {
+      await prisma.account.create({
+        data: {
+          id: `admin_acc_${admin.id}`,
+          accountId: `admin_acc_${admin.id}`,
+          providerId: 'credential',
+          userId: admin.id,
+          password: hashedPassword,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      });
     }
+    
+    console.log(`Updated existing admin ${adminEmail} with role SUPER_ADMIN and reset password to: SuperS3cure_2026_xY8p!`);
   }
 
   // 3. Create some Folders/Collections
